@@ -1,0 +1,224 @@
+{
+  "id": "song_0001",
+  "slug": "estrada-de-terra",
+  "title": "Estrada de Terra",
+  "artist": "CifraLab Demo",
+  "originalKey": "C",
+  "bpm": 72,
+  "timeSignature": "4/4",
+  "map": ["i", "v1", "pr1", "r1", "v2", "pr1", "r1", "p1", "r2", "f1"],
+  "sections": [
+    {
+      "id": "i",
+      "type": "intro",
+      "tag": "I",
+      "name": "Introdução",
+      "annotation": "Violão dedilhado, só voz e cordas",
+      "lines": [
+        {
+          "parts": [
+            { "chord": "C7M", "text": "        " },
+            { "chord": "G/B", "text": "        " },
+            { "chord": "Am7", "text": "        " },
+            { "chord": "F7M", "text": "        " }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "v1",
+      "type": "verse",
+      "tag": "V1",
+      "name": "Verso 1",
+      "lines": [
+        {
+          "parts": [
+            { "chord": "C", "text": "Saí de casa " },
+            { "chord": "G/B", "text": "quando o sol nasceu" }
+          ]
+        },
+        {
+          "parts": [
+            { "chord": "Am", "text": "Levei no bolso " },
+            { "chord": "Em7", "text": "um mapa que envelheceu" }
+          ]
+        },
+        {
+          "parts": [
+            { "chord": "F7M", "text": "A poeira sobe, " },
+            { "chord": "C/E", "text": "o vento leva" },
+            { "chord": "Dm7", "text": " o meu chapéu" }
+          ]
+        },
+        {
+          "parts": [
+            { "chord": "G7", "text": "E a estrada segue " },
+            { "chord": "G#dim", "text": "riscando " },
+            { "chord": "Am", "text": "o céu" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pr1",
+      "type": "prechorus",
+      "tag": "Pr",
+      "name": "Pré-Refrão",
+      "annotation": "Entra percussão leve",
+      "lines": [
+        {
+          "parts": [
+            { "chord": "Dm7", "text": "Cada curva " },
+            { "chord": "Em7", "text": "é uma lição" }
+          ]
+        },
+        {
+          "parts": [
+            { "chord": "F7M", "text": "Cada pedra, " },
+            { "chord": "Gsus4", "text": "uma can" },
+            { "chord": "G", "text": "ção" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "r1",
+      "type": "chorus",
+      "tag": "R1",
+      "name": "Refrão 1",
+      "annotation": "Toda banda, dinâmica média",
+      "lines": [
+        {
+          "parts": [
+            { "chord": "C7M9", "text": "Estrada de terra, " },
+            { "chord": "Am7", "text": "me leva pra longe" }
+          ]
+        },
+        {
+          "parts": [
+            { "chord": "F7M", "text": "Onde o horizonte " },
+            { "chord": "G", "text": "não se esconde" }
+          ]
+        },
+        {
+          "parts": [
+            { "chord": "Em7", "text": "Debaixo da lona, " },
+            { "chord": "Am7", "text": "conto as estrelas" }
+          ]
+        },
+        {
+          "parts": [
+            { "chord": "Dm7", "text": "E durmo sonhando " },
+            { "chord": "G7", "text": "com todas " },
+            { "chord": "C", "text": "elas" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "v2",
+      "type": "verse",
+      "tag": "V2",
+      "name": "Verso 2",
+      "lines": [
+        {
+          "parts": [
+            { "chord": "C", "text": "Parei num rancho " },
+            { "chord": "G/B", "text": "pra pedir um café" }
+          ]
+        },
+        {
+          "parts": [
+            { "chord": "Am", "text": "Um velho contou " },
+            { "chord": "Em7", "text": "causos de fé" }
+          ]
+        },
+        {
+          "parts": [
+            { "chord": "F7M", "text": "Disse que a pressa " },
+            { "chord": "C/E", "text": "mata a viagem" }
+          ]
+        },
+        {
+          "parts": [
+            { "chord": "Dm7", "text": "Que o destino é só " },
+            { "chord": "G7", "text": "metade da paisa" },
+            { "chord": "C", "text": "gem" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "p1",
+      "type": "interlude",
+      "tag": "P",
+      "name": "Ponte",
+      "annotation": "Grande pausa, volta só o violão",
+      "lines": [
+        {
+          "parts": [
+            { "chord": "Am7", "text": "E se a chuva vier, " },
+            { "chord": "Bm7(11)", "text": "deixa molhar" }
+          ]
+        },
+        {
+          "parts": [
+            { "chord": "F7M", "text": "Barro no pé " },
+            { "chord": "Gsus4", "text": "também é lu" },
+            { "chord": "G", "text": "gar" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "r2",
+      "type": "chorus",
+      "tag": "R2",
+      "name": "Refrão 2",
+      "annotation": "Crescendo, ataque no último compasso",
+      "lines": [
+        {
+          "parts": [
+            { "chord": "C7M9", "text": "Estrada de terra, " },
+            { "chord": "Am7", "text": "me leva pra longe" }
+          ]
+        },
+        {
+          "parts": [
+            { "chord": "F7M", "text": "Onde o horizonte " },
+            { "chord": "G", "text": "não se esconde" }
+          ]
+        },
+        {
+          "parts": [
+            { "chord": "F7", "text": "E quando eu chegar, " },
+            { "chord": "Em7", "text": "seja onde for" }
+          ]
+        },
+        {
+          "parts": [
+            { "chord": "Dm7", "text": "A estrada que fica " },
+            { "chord": "G7", "text": "é a que eu " },
+            { "chord": "C", "text": "vou" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f1",
+      "type": "ending",
+      "tag": "F",
+      "name": "Final",
+      "annotation": "Ritardando, termina no 17M",
+      "lines": [
+        {
+          "parts": [
+            { "chord": "F7M", "text": "        " },
+            { "chord": "G/B", "text": "        " },
+            { "chord": "C7M", "text": "        " }
+          ]
+        }
+      ]
+    }
+  ]
+}
