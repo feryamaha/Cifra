@@ -2,7 +2,8 @@ import type { ParsedChord } from './chords.types';
 
 export type AccidentalStyle = 'flat' | 'sharp';
 
-export type NotationMode = 'letters' | 'numbers';
+/** SPEC_006 E8: letras, números da escala, numerais romanos, Do Re Mi */
+export type NotationMode = 'letters' | 'numbers' | 'roman' | 'solfege';
 
 export interface ViewOptions {
   /** deslocamento de tom escolhido pelo usuário, em semitons */

@@ -56,6 +56,8 @@ export function transposeChord(
  */
 const DEGREE_FLAT = ['1', 'b2', '2', 'b3', '3', '4', 'b5', '5', 'b6', '6', 'b7', '7'];
 const DEGREE_SHARP = ['1', '#1', '2', '#2', '3', '4', '#4', '5', '#5', '6', '#6', '7'];
+const ROMAN_FLAT = ['I', 'bII', 'II', 'bIII', 'III', 'IV', 'bV', 'V', 'bVI', 'VI', 'bVII', 'VII'];
+const SOLFEGE = ['Do', 'Do#', 'Re', 'Mib', 'Mi', 'Fa', 'Fa#', 'Sol', 'Lab', 'La', 'Sib', 'Si'];
 
 export function pcToDegree(
   pc: PitchClass,
@@ -134,12 +136,24 @@ export function renderChord(
   const shapeKeyPc = mod12(currentKeyPc - opts.capo);
   const shape = transposeChord(sounding, -opts.capo, shapeKeyPc);
 
-  const display =
-    opts.notation === 'numbers'
-      ? chordToDegreeSymbol(sounding, currentKeyPc, opts.accidentalStyle)
-      : opts.capo > 0
-        ? shape.symbol
-        : sounding.symbol;
+  let display: string;
+  if (opts.notation === 'numbers') {
+    display = chordToDegreeSymbol(sounding, currentKeyPc, opts.accidentalStyle);
+  } else if (opts.notation === 'roman') {
+    const interval = mod12(sounding.rootPc - currentKeyPc);
+    const rootR = ROMAN_FLAT[interval];
+    const bassR =
+      sounding.bassPc === null ? '' : `/${ROMAN_FLAT[mod12(sounding.bassPc - currentKeyPc)]}`;
+    display = `${rootR}${sounding.suffix}${bassR}`;
+  } else if (opts.notation === 'solfege') {
+    const rootS = SOLFEGE[sounding.rootPc];
+    const bassS = sounding.bassPc === null ? '' : `/${SOLFEGE[sounding.bassPc]}`;
+    display = `${rootS}${sounding.suffix}${bassS}`;
+  } else if (opts.capo > 0) {
+    display = shape.symbol;
+  } else {
+    display = sounding.symbol;
+  }
 
   return { display, sounding, shape };
 }

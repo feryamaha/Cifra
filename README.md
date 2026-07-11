@@ -1,4 +1,4 @@
-# CifraLab
+# Cifra Tom
 
 Protótipo de site de cifras focado em violão. Stack: Next.js 16 (App Router), React 19, TypeScript estrito, Bun, Biome, Tailwind CSS 3.
 
@@ -30,7 +30,10 @@ A UI foi refatorada para seguir um design system próprio, com tokens agnóstico
 - **Sequência de acordes:** tabela que detecta progressões repetidas na música e agrupa por seções, facilitando identificar padrões (ex: 4 acordes repetidos).
 - **Notação de números da escala:** toggle que exibe acordes como graus (`F7` no tom de C vira `47`).
 - **Cifra simplificada:** reduz acordes à tríade (`C7M9 -> C`, `Bm7(11) -> Bm`).
-- **Afinações:** Padrão, Drop D, DADGAD, Open G, Open D. Shapes recalculados dinamicamente.
+- **Afinações (10):** Padrão, ½ tom abaixo, 1 tom abaixo, Drop D, Drop C, DADGAD, Open G, Open D, Open E, Open A. Shapes recalculados dinamicamente.
+- **Diagramas interativos:** hover/focus/touch em qualquer acorde da cifra abre popover com diagrama (dedos + barre).
+- **Faixa de acordes:** strip lateral com todos os shapes únicos da música.
+- **Mapa de afinação:** ao trocar afinação, visualiza cordas soltas (antes → depois) e o shape recalculado.
 
 ## 3. Matemática dos motores (`src/lib/music/`)
 
@@ -97,14 +100,23 @@ src/types/              contratos TypeScript
 scripts/test-engine.ts  validação dos motores
 ```
 
-## 8. Limitações conhecidas
+## 8. Evolução premium (destaques)
+
+- **Design tokens** só em `tailwind.config.ts` (root de estilo). `globals.css` = resets.
+- **ChordHover**: diagrama no hover **em cima do acorde da cifra**; some ao tirar o mouse (portal fixed).
+- **Controles** sem shape enterrado — só tom/capo/afinação + mapa de cordas.
+- **ChordDiagram** redesenhado: dedos, barre, 3 tamanhos.
+- **Adapter chords-db** pronto; skill em `.devin/skills/guitar-music-theory/`.
+- **Fontes de dados** em `docs/DATA_SOURCES.md`.
+
+## 9. Limitações conhecidas
 
 1. O parser cobre o vocabulário usual de cifra popular (m, dim, aug, sus, 6, 7, 7M, 9, add9, 11, 13, b5, #5). Sufixos exóticos degradam com segurança para a tríade no motor de shapes, mas o texto exibido permanece exato.
 2. O motor de shapes retorna 1 shape (o melhor pontuado). Retornar os top N é extensão direta da mesma busca.
-3. O diagrama não desenha pestana como barra contínua, marca as casas individualmente.
-4. Graus são calculados sobre a escala maior do tom. Tons menores usam o relativo maior por convenção.
-5. Uma música de exemplo com letra original (sem letra de terceiros por direitos autorais). A estrutura replica o padrão do chart do MultiTracks: intro, versos, pré-refrões, refrões, ponte e final.
+3. Graus são calculados sobre a escala maior do tom. Tons menores usam o relativo maior por convenção.
+4. Uma música de exemplo com letra original (sem letra de terceiros por direitos autorais).
+5. O JSON do chords-db ainda não está vendored — o adapter está pronto; próximo passo é importar `guitar.json` (MIT).
 
-## 9. Controle de versão
+## 10. Controle de versão
 
 As pastas `.devin/` e `.claude/` são locais e não devem ser comitadas. O `.gitignore` já as exclui, assim como `.env`, `.next/`, `node_modules/` e outros artefatos de build.

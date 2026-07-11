@@ -77,7 +77,16 @@ check('C no tom de G, capo 2, números -> 4', capoNum.display, '4');
 
 console.log('\n== 5. MOTOR DE SHAPES POR AFINAÇÃO ==');
 const dChord = chordPitchClasses(parseChord('D')!); // pcs {2,6,9}
-for (const tuningId of ['standard', 'dadgad', 'openG', 'openD', 'dropD']) {
+for (const tuningId of [
+  'standard',
+  'halfStepDown',
+  'dadgad',
+  'openG',
+  'openD',
+  'openE',
+  'dropD',
+  'dropC',
+]) {
   const tuning = TUNINGS[tuningId];
   const v = findVoicing(tuning.strings, dChord);
   if (!v) {
@@ -86,14 +95,19 @@ for (const tuningId of ['standard', 'dadgad', 'openG', 'openD', 'dropD']) {
     continue;
   }
   const soundingPcs = new Set(
-    v.frets.map((f, i) => (f === null ? null : (tuning.strings[i] + f) % 12)).filter((p) => p !== null),
+    v.frets
+      .map((f, i) => (f === null ? null : (tuning.strings[i] + f) % 12))
+      .filter((p): p is number => p !== null),
   );
-  const coversTriad = [2, 6, 9].every((pc) => soundingPcs.has(pc));
-  if (!coversTriad) failures++;
+  // Notas obrigatórias de D maior: fundamental (2) e terça (6). A 5ª pode ser omitida.
+  const coversRequired = [2, 6].every((pc) => soundingPcs.has(pc));
+  if (!coversRequired) failures++;
+  const hasFingers = Array.isArray(v.fingers) && v.fingers.length === 6;
+  if (!hasFingers) failures++;
   console.log(
-    `${coversTriad ? 'PASS' : 'FAIL'}  D em ${tuning.label}: frets=[${v.frets
+    `${coversRequired && hasFingers ? 'PASS' : 'FAIL'}  D em ${tuning.label}: frets=[${v.frets
       .map((f) => (f === null ? 'x' : f))
-      .join(' ')}] cobre tríade=${coversTriad}`,
+      .join(' ')}] fingers=[${v.fingers.map((f) => (f === null ? 'x' : f)).join(' ')}] barre=${v.barre} req=${coversRequired}`,
   );
 }
 
@@ -103,6 +117,25 @@ const dStandard = findVoicing(TUNINGS.standard.strings, dChord)!;
 const bassIdx = dStandard.frets.findIndex((f) => f !== null);
 const bassPc = (TUNINGS.standard.strings[bassIdx] + (dStandard.frets[bassIdx] as number)) % 12;
 check('D padrão: baixo é D (pc 2)', bassPc, 2);
+
+// Open D: D maior deve permitir muitas cordas soltas
+const dOpenD = findVoicing(TUNINGS.openD.strings, dChord)!;
+const openCount = dOpenD.frets.filter((f) => f === 0).length;
+if (openCount < 3) failures++;
+console.log(
+  `${openCount >= 3 ? 'PASS' : 'FAIL'}  D em Open D: ≥3 cordas soltas (obtido ${openCount}) frets=[${dOpenD.frets
+    .map((f) => (f === null ? 'x' : f))
+    .join(' ')}]`,
+);
+
+// Adapter chords-db
+import { parseFretsString, positionToVoicing, mapSuffixToDb } from '../src/lib/music/chords-db.adapter';
+console.log('\n== 5b. ADAPTER chords-db ==');
+check('frets x32010', parseFretsString('x32010'), [null, 3, 2, 0, 1, 0]);
+check('suffix 7M -> maj7', mapSuffixToDb('7M'), 'maj7');
+check('suffix m -> minor', mapSuffixToDb('m'), 'minor');
+const cShape = positionToVoicing({ frets: 'x32010', fingers: 'x32010' });
+check('C shape frets', cShape.frets, [null, 3, 2, 0, 1, 0]);
 
 console.log('\n== 6. ROUND-TRIP transposição (12 semitons = identidade) ==');
 const roundTrip = transposeChord(

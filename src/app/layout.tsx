@@ -1,7 +1,9 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Chakra_Petch, Inter, JetBrains_Mono } from 'next/font/google';
+import { SessionProvider } from '@/components/auth/SessionProvider';
 import { Footer } from '@/components/layout/Footer';
 import { Header } from '@/components/layout/Header';
+import { ServiceWorkerRegister } from '@/components/pwa/ServiceWorkerRegister';
 import './globals.css';
 
 const chakra = Chakra_Petch({
@@ -26,18 +28,33 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'CifraLab · Cifras para violão',
+  title: 'Cifra Tom · Cifras para violão',
   description:
     'Cifras 100% focadas em violão: transposição, capotraste calculado, números da escala e shapes por afinação.',
+  manifest: '/manifest.json',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favico.png', type: 'image/png', sizes: '488x511' },
+    ],
+    apple: [{ url: '/favico.png', type: 'image/png' }],
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#f2ab3c',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR" className={`${chakra.variable} ${inter.variable} ${jetbrains.variable}`}>
       <body className="flex min-h-screen flex-col font-sans">
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <SessionProvider>
+          <ServiceWorkerRegister />
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </SessionProvider>
       </body>
     </html>
   );

@@ -26,6 +26,7 @@ yarn-error.log*
 .env.development
 .env.test
 .env.production
+.env.example
 
 # local runtime
 *.log
@@ -49,7 +50,19 @@ Thumbs.db
 
 # cifralab sensitive
 .nemesis/pentest-nemesis-control/reports/
-.devin/ledger/
+# .devin: ignora conteúdo local, mas versiona skills do projeto
 .devin/
+.grok/
 .claude/
+Feature-Documentation/
+docs/
 
+
+# datasets brutos (GB) — se existirem localmente
+*.csv.gz
+
+# store runtime do Cifra Tom (publicação/moderação — local, não versionado)
+src/data/store/
+
+# security
+.nemesis/

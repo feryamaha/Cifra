@@ -1,0 +1,137 @@
+{
+  "id": "song_0004",
+  "slug": "noite-em-d",
+  "title": "Noite em D",
+  "artist": "Cifra Tom Demo",
+  "originalKey": "D",
+  "bpm": 72,
+  "timeSignature": "6/8",
+  "map": ["i", "v1", "r1", "v2", "r1", "f1"],
+  "sections": [
+    {
+      "id": "i",
+      "type": "intro",
+      "tag": "I",
+      "name": "Introdução",
+      "annotation": "Bom em Open D ou Drop D",
+      "lines": [
+        {
+          "parts": [
+            { "chord": "D", "text": "        " },
+            { "chord": "A", "text": "        " },
+            { "chord": "Bm", "text": "        " },
+            { "chord": "G", "text": "        " }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "v1",
+      "type": "verse",
+      "tag": "V1",
+      "name": "Verso 1",
+      "lines": [
+        {
+          "parts": [
+            { "chord": "D", "text": "A cidade apaga " },
+            { "chord": "A", "text": "as luzes devagar" }
+          ]
+        },
+        {
+          "parts": [
+            { "chord": "Bm", "text": "E o violão " },
+            { "chord": "G", "text": "começa a falar" }
+          ]
+        },
+        {
+          "parts": [
+            { "chord": "D", "text": "Notas em D " },
+            { "chord": "A", "text": "como um farol" }
+          ]
+        },
+        {
+          "parts": [
+            { "chord": "Bm", "text": "Guiando o sono " },
+            { "chord": "G", "text": "sem ter pressa" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "r1",
+      "type": "chorus",
+      "tag": "R",
+      "name": "Refrão",
+      "lines": [
+        {
+          "parts": [
+            { "chord": "G", "text": "Noite em D, " },
+            { "chord": "D", "text": "fica um pouco" }
+          ]
+        },
+        {
+          "parts": [
+            { "chord": "A", "text": "Deixa o silêncio " },
+            { "chord": "Bm", "text": "virar canto" }
+          ]
+        },
+        {
+          "parts": [
+            { "chord": "G", "text": "Se o dia volta, " },
+            { "chord": "D", "text": "eu ainda toco" }
+          ]
+        },
+        {
+          "parts": [
+            { "chord": "A", "text": "Esse acorde " },
+            { "chord": "D", "text": "que me acalma" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "v2",
+      "type": "verse",
+      "tag": "V2",
+      "name": "Verso 2",
+      "lines": [
+        {
+          "parts": [
+            { "chord": "D", "text": "A lua desenha " },
+            { "chord": "A", "text": "o braço do violão" }
+          ]
+        },
+        {
+          "parts": [
+            { "chord": "Bm", "text": "Cada traste " },
+            { "chord": "G", "text": "é um caminho" }
+          ]
+        },
+        {
+          "parts": [
+            { "chord": "D", "text": "Não preciso " },
+            { "chord": "A", "text": "de plateia" }
+          ]
+        },
+        {
+          "parts": [
+            { "chord": "Bm", "text": "Só de cordas " },
+            { "chord": "G", "text": "e de tempo" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f1",
+      "type": "ending",
+      "tag": "F",
+      "name": "Final",
+      "annotation": "Deixa soar",
+      "lines": [
+        {
+          "parts": [{ "chord": "G", "text": "Noite em D… " }, { "chord": "D", "text": "" }]
+        }
+      ]
+    }
+  ]
+}

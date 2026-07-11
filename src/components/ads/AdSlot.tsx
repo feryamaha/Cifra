@@ -14,7 +14,7 @@ export function AdSlot({ position, className }: AdSlotProps) {
       data-ad-position={position}
       className={cn(
         'flex items-center justify-center rounded-xl border border-dashed border-stroke-200 bg-secondary-900/40 text-xs text-neutral-500',
-        position === 'sidebar' ? 'min-h-48' : 'min-h-24 w-full',
+        position === 'sidebar' ? 'min-h-48' : 'min-h-44 w-full @tablet:min-h-52',
         className,
       )}
     >

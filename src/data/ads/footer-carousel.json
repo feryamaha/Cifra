@@ -1,0 +1,111 @@
+{
+  "copyright": "© Cifra Tom · Parceiros",
+  "intervalMs": 5000,
+  "columns": [
+    {
+      "id": "col-1",
+      "slides": [
+        {
+          "id": "c1-s1",
+          "image": "/favico.png",
+          "text": "Coluna 1 · Slide 1: Cifra Tom, cifras sem interrupção.",
+          "href": "/"
+        },
+        {
+          "id": "c1-s2",
+          "image": "/favico.png",
+          "text": "Coluna 1 · Slide 2: espaço para parceiro.",
+          "href": "/"
+        },
+        {
+          "id": "c1-s3",
+          "image": "/favico.png",
+          "text": "Coluna 1 · Slide 3: anuncie no rodapé.",
+          "href": "/"
+        },
+        {
+          "id": "c1-s4",
+          "image": "/favico.png",
+          "text": "Coluna 1 · Slide 4: outdoor digital.",
+          "href": "/"
+        },
+        {
+          "id": "c1-s5",
+          "image": "/favico.png",
+          "text": "Coluna 1 · Slide 5: troque imagem, texto e link no JSON.",
+          "href": "/"
+        }
+      ]
+    },
+    {
+      "id": "col-2",
+      "slides": [
+        {
+          "id": "c2-s1",
+          "image": "/favico.png",
+          "text": "Coluna 2 · Slide 1: alcance músicos que tocam de verdade.",
+          "href": "/"
+        },
+        {
+          "id": "c2-s2",
+          "image": "/favico.png",
+          "text": "Coluna 2 · Slide 2: espaço para parceiro.",
+          "href": "/"
+        },
+        {
+          "id": "c2-s3",
+          "image": "/favico.png",
+          "text": "Coluna 2 · Slide 3: anuncie no rodapé.",
+          "href": "/"
+        },
+        {
+          "id": "c2-s4",
+          "image": "/favico.png",
+          "text": "Coluna 2 · Slide 4: outdoor digital.",
+          "href": "/"
+        },
+        {
+          "id": "c2-s5",
+          "image": "/favico.png",
+          "text": "Coluna 2 · Slide 5: troque imagem, texto e link no JSON.",
+          "href": "/"
+        }
+      ]
+    },
+    {
+      "id": "col-3",
+      "slides": [
+        {
+          "id": "c3-s1",
+          "image": "/favico.png",
+          "text": "Coluna 3 · Slide 1: marketing para lojas e marcas.",
+          "href": "/"
+        },
+        {
+          "id": "c3-s2",
+          "image": "/favico.png",
+          "text": "Coluna 3 · Slide 2: espaço para parceiro.",
+          "href": "/"
+        },
+        {
+          "id": "c3-s3",
+          "image": "/favico.png",
+          "text": "Coluna 3 · Slide 3: anuncie no rodapé.",
+          "href": "/"
+        },
+        {
+          "id": "c3-s4",
+          "image": "/favico.png",
+          "text": "Coluna 3 · Slide 4: outdoor digital.",
+          "href": "/"
+        },
+        {
+          "id": "c3-s5",
+          "image": "/favico.png",
+          "text": "Coluna 3 · Slide 5: troque imagem, texto e link no JSON.",
+          "href": "/"
+        }
+      ]
+    }
+  ]
+}

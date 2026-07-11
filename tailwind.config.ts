@@ -3,13 +3,14 @@ import defaultTheme from 'tailwindcss/defaultTheme';
 import plugin from 'tailwindcss/plugin';
 
 /**
- * Sistema de tokens no mesmo padrão do Dashboard-DentalUNI:
- * primary / secondary / neutral / stroke / auxiliary.{success,danger,warning,info}
+ * ROOT de estilização do CifraLab.
+ * Todos os design tokens (cores, tipografia, espaçamento, sombras, motion)
+ * vivem AQUI. globals.css só tem resets que o Tailwind não cobre.
  *
- * Identidade: palco escuro (como o MultiTracks), acento âmbar quente
- * (luz de palco / madeira do violão) no lugar do cyan.
+ * Identidade: palco escuro (MultiTracks), acento âmbar quente
+ * (luz de palco / madeira do violão). Otimizado para uso noturno.
  *
- * Fontes via next/font (CSS variables --font-chakra, --font-inter, --font-jetbrains).
+ * Fontes via next/font: --font-chakra, --font-inter, --font-jetbrains.
  */
 const config: Config = {
   content: ['./src/**/*.{ts,tsx}'],
@@ -76,12 +77,37 @@ const config: Config = {
         sans: ['var(--font-inter)', 'sans-serif'],
         mono: ['var(--font-jetbrains)', 'monospace'],
       },
+      spacing: {
+        18: '4.5rem',
+        22: '5.5rem',
+      },
       boxShadow: {
         glow: '0 0 18px rgba(242, 171, 60, 0.35)',
+        'glow-sm': '0 0 10px rgba(242, 171, 60, 0.2)',
+        'glow-lg': '0 0 32px rgba(242, 171, 60, 0.4)',
         '10': '0 1px 4px 0 rgba(0, 0, 0, 0.08), 0 1px 2px 0 rgba(25, 25, 25, 0.08)',
         '60': '0 4px 12px 0 rgba(25, 25, 25, 0.20)',
         '69': '0 4px 16px 0 rgba(66, 69, 77, 0.06), 0 2px 6px 0 rgba(66, 69, 77, 0.10)',
+        stage: '0 8px 32px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(242, 171, 60, 0.06)',
+        popover:
+          '0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(242, 171, 60, 0.1), 0 0 24px rgba(242, 171, 60, 0.12)',
         'negative-footer': '0 -4px 14px 0 rgba(0, 0, 0, 0.08)',
+      },
+      borderRadius: {
+        sm: '0.375rem',
+        md: '0.5rem',
+        lg: '0.75rem',
+        xl: '1rem',
+        '2xl': '1.25rem',
+      },
+      transitionTimingFunction: {
+        out: 'cubic-bezier(0.16, 1, 0.3, 1)',
+        'in-out': 'cubic-bezier(0.4, 0, 0.2, 1)',
+      },
+      transitionDuration: {
+        fast: '120ms',
+        normal: '200ms',
+        slow: '320ms',
       },
       keyframes: {
         progress: {
@@ -108,6 +134,22 @@ const config: Config = {
           from: { opacity: '1' },
           to: { opacity: '0' },
         },
+        fadeIn: {
+          from: { opacity: '0' },
+          to: { opacity: '1' },
+        },
+        scaleIn: {
+          from: { opacity: '0', transform: 'scale(0.94)' },
+          to: { opacity: '1', transform: 'scale(1)' },
+        },
+        slideUp: {
+          from: { opacity: '0', transform: 'translateY(8px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
+        popoverIn: {
+          from: { opacity: '0', transform: 'translateY(6px) scale(0.96)' },
+          to: { opacity: '1', transform: 'translateY(0) scale(1)' },
+        },
       },
       animation: {
         progress: 'progress var(--slide-duration, 3s) linear forwards',
@@ -116,6 +158,10 @@ const config: Config = {
         'modal-slide-out': 'modalSlideOut 0.2s ease-in forwards',
         'modal-overlay-fade-in': 'overlayFadeIn 0.2s ease-out forwards',
         'modal-overlay-fade-out': 'overlayFadeOut 0.2s ease-in forwards',
+        'fade-in': 'fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        'scale-in': 'scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        'slide-up': 'slideUp 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        'popover-in': 'popoverIn 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards',
       },
       fontSize: {
         xs: ['0.75rem', '140%'],
@@ -127,6 +173,11 @@ const config: Config = {
         '4xl': ['2.5rem', '120%'],
         '5xl': ['3rem', '120%'],
         '6xl': ['4rem', '120%'],
+      },
+      zIndex: {
+        chord: '60',
+        drawer: '50',
+        overlay: '40',
       },
     },
     container: {

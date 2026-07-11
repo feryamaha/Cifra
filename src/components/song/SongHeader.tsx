@@ -1,25 +1,28 @@
 import { Badge } from '@/components/ui/Badge';
 import type { SongHeaderProps } from '@/types/song/song-view.types';
 
+/**
+ * Cabeçalho público da cifra.
+ * Só metadados musicais: Tom, compasso (tempo), afinação e BPM (se houver).
+ * Sem badges de origem, admin, publicação ou status de backend.
+ */
 export function SongHeader({ view }: SongHeaderProps) {
   const { song } = view;
 
   return (
-    <header className="mb-6">
-      <h1 className="font-chakra text-3xl font-bold text-neutral-900">{song.title}</h1>
-      <p className="mt-1 text-neutral-700">{song.artist}</p>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
+    <header className="mb-6 animate-slide-up">
+      <p className="mb-1 font-mono text-xs uppercase tracking-[0.2em] text-primary-500">
+        Cifra Tom
+      </p>
+      <h1 className="font-chakra text-3xl font-bold tracking-tight text-neutral-900 text-balance @tablet:text-4xl">
+        {song.title}
+      </h1>
+      <p className="mt-1.5 text-lg text-neutral-700">{song.artist}</p>
+      <div className="mt-4 flex flex-wrap items-center gap-2">
         <Badge variant="amber">Tom: {view.currentKeyName}</Badge>
-        {view.capo > 0 && (
-          <Badge variant="warning">
-            Capo: traste {view.capo} · shapes de {view.shapeKeyName}
-          </Badge>
-        )}
-        <Badge>BPM: {song.bpm}</Badge>
         <Badge>{song.timeSignature}</Badge>
         <Badge variant="info">{view.tuning.label}</Badge>
-        {view.notation === 'numbers' && <Badge variant="success">Números da escala</Badge>}
-        {view.simplified && <Badge variant="success">Simplificada</Badge>}
+        {song.bpm != null && song.bpm > 0 && <Badge variant="neutral">BPM: {song.bpm}</Badge>}
       </div>
     </header>
   );

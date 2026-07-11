@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Resets e base que o Tailwind config não cobre sozinho. */
+/* Tokens de design (cores, tipografia, espaçamento, sombras) vivem em tailwind.config.ts */
+
 :root {
   color-scheme: dark;
 }
@@ -32,11 +35,18 @@ span {
   p {
     @apply font-sans;
   }
+
+  ::selection {
+    @apply bg-primary-400/30 text-neutral-900;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * {
+  *,
+  *::before,
+  *::after {
     transition-duration: 0.01ms;
     animation-duration: 0.01ms;
+    animation-iteration-count: 1;
   }
 }

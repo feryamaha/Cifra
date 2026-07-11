@@ -1,17 +1,30 @@
 'use client';
 
+import { ChordHover } from '@/components/music/ChordHover';
 import { Card } from '@/components/ui/Card';
+import { ChordDiagram } from '@/components/ui/ChordDiagram';
+import { cn } from '@/lib/utils';
 import type { SectionCardProps } from '@/types/song/song-view.types';
 
-export function SectionCard({ section, viewType, onChordClick }: SectionCardProps) {
+export function SectionCard({
+  section,
+  viewType,
+  selectedChord,
+  tuning,
+  resolveVoicing,
+  resolveVoicings,
+  onChordClick,
+  lefty = false,
+  inlineDiagrams = false,
+}: SectionCardProps) {
   const showChords = viewType !== 'lyrics';
   const showLyrics = viewType !== 'chords-only';
 
   return (
-    <Card>
+    <Card className="overflow-visible rounded-2xl border-stroke-200 shadow-10 transition-colors hover:border-primary-800">
       <div className="mb-3 flex items-center gap-2">
-        <span className="flex h-6 w-8 items-center justify-center rounded-full border border-primary-800 bg-primary-950 font-mono text-xs font-bold text-primary-300">
-          {section.tag}
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-primary-700 bg-primary-950 font-mono text-[10px] font-bold text-primary-300">
+          {section.tag.slice(0, 3)}
         </span>
         <h2 className="font-chakra text-sm font-semibold uppercase tracking-wide text-neutral-900">
           {section.name}
@@ -28,18 +41,23 @@ export function SectionCard({ section, viewType, onChordClick }: SectionCardProp
           <div key={li} className="flex flex-wrap items-end gap-y-3">
             {line.parts.map((part, pi) => {
               const chord = part.chord;
+              const multi = chord ? resolveVoicings(chord) : null;
+              const voicing = chord
+                ? (resolveVoicing(chord)?.voicing ?? multi?.voicings[0] ?? null)
+                : null;
               return (
                 <span key={pi} className="inline-flex flex-col">
                   {showChords &&
                     (chord && part.display ? (
-                      <button
-                        type="button"
-                        onClick={() => onChordClick(chord)}
-                        className="w-fit cursor-pointer rounded px-0.5 text-left font-mono text-[0.9em] font-bold leading-tight text-primary-300 transition-colors hover:bg-primary-950 hover:text-primary-200"
-                        title="Ver shape"
-                      >
-                        {part.display}
-                      </button>
+                      <ChordHover
+                        symbol={chord}
+                        display={part.display}
+                        voicing={voicing}
+                        variations={multi?.voicings ?? []}
+                        tuning={tuning}
+                        active={selectedChord === chord}
+                        onSelect={onChordClick}
+                      />
                     ) : (
                       <span className="h-[1.2em]" />
                     ))}
@@ -49,6 +67,16 @@ export function SectionCard({ section, viewType, onChordClick }: SectionCardProp
                     </span>
                   )}
                   {viewType === 'chords-only' && <span className="w-3" />}
+                  {inlineDiagrams && voicing && (
+                    <span className={cn('mt-1', lefty && 'scale-x-[-1]')}>
+                      <ChordDiagram
+                        voicing={voicing}
+                        tuning={tuning}
+                        label={part.display ?? ''}
+                        size="sm"
+                      />
+                    </span>
+                  )}
                 </span>
               );
             })}

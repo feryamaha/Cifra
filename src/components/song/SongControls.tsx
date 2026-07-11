@@ -1,8 +1,8 @@
 'use client';
 
+import { TuningMap } from '@/components/music/TuningMap';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
-import { ChordDiagram } from '@/components/ui/ChordDiagram';
 import { ControlLabel } from '@/components/ui/ControlLabel';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { Select } from '@/components/ui/Select';
@@ -34,13 +34,10 @@ export function SongControls({ view }: SongControlsProps) {
                 type="button"
                 onClick={() => view.selectKeyRoot(key)}
                 className={cn(
-                  'relative cursor-pointer rounded-md border py-1.5 font-mono text-sm transition-colors',
-                  'focus-visible:outline-2 focus-visible:outline-primary-400',
+                  'relative cursor-pointer rounded-md border py-1.5 font-mono text-sm transition-all',
                   view.currentKeyName === key
                     ? 'border-primary-500 bg-primary-400 font-bold text-secondary-950'
-                    : view.currentKeyName[0] === key
-                      ? 'border-primary-700 bg-secondary-800 text-primary-300'
-                      : 'border-stroke-200 bg-secondary-800 text-neutral-700 hover:border-primary-700',
+                    : 'border-stroke-200 bg-secondary-800 text-neutral-700 hover:border-primary-700',
                 )}
               >
                 {key}
@@ -71,18 +68,17 @@ export function SongControls({ view }: SongControlsProps) {
 
       <section>
         <ControlLabel>Capotraste</ControlLabel>
-        <div className="grid grid-cols-8 gap-1">
+        <div className="grid grid-cols-5 gap-1 @tablet:grid-cols-9">
           {CAPO_OPTIONS.map((fret) => (
             <button
               key={fret}
               type="button"
               onClick={() => view.setCapo(fret)}
               className={cn(
-                'cursor-pointer rounded-md border py-1.5 font-mono text-sm transition-colors',
-                'focus-visible:outline-2 focus-visible:outline-primary-400',
+                'cursor-pointer rounded-md border py-1.5 font-mono text-sm',
                 view.capo === fret
                   ? 'border-primary-500 bg-primary-400 font-bold text-secondary-950'
-                  : 'border-stroke-200 bg-secondary-800 text-neutral-700 hover:border-primary-700',
+                  : 'border-stroke-200 bg-secondary-800 text-neutral-700',
               )}
             >
               {fret === 0 ? 'Ø' : fret}
@@ -91,14 +87,13 @@ export function SongControls({ view }: SongControlsProps) {
         </div>
         {view.capo > 0 && (
           <p className="mt-2 text-xs text-neutral-500">
-            A música continua soando em {view.currentKeyName}. Toque os shapes de{' '}
-            {view.shapeKeyName}.
+            Soa em {view.currentKeyName}. Shapes de {view.shapeKeyName}.
           </p>
         )}
       </section>
 
       <section>
-        <ControlLabel>Visualização</ControlLabel>
+        <ControlLabel>Visualização / notação</ControlLabel>
         <SegmentedControl
           value={view.notation}
           onChange={view.setNotation}
@@ -109,11 +104,26 @@ export function SongControls({ view }: SongControlsProps) {
 
       <section className="flex items-center justify-between">
         <ControlLabel className="mb-0">Cifra simplificada</ControlLabel>
+        <Toggle checked={view.simplified} onChange={view.setSimplified} label="Simplificada" />
+      </section>
+
+      <section className="flex items-center justify-between">
+        <ControlLabel className="mb-0">2 colunas (A4)</ControlLabel>
+        <Toggle checked={view.twoColumns} onChange={view.setTwoColumns} label="2 colunas" />
+      </section>
+
+      <section className="flex items-center justify-between">
+        <ControlLabel className="mb-0">Diagramas no corpo</ControlLabel>
         <Toggle
-          checked={view.simplified}
-          onChange={view.setSimplified}
-          label="Cifra simplificada"
+          checked={view.inlineDiagrams}
+          onChange={view.setInlineDiagrams}
+          label="Diagramas inline"
         />
+      </section>
+
+      <section className="flex items-center justify-between">
+        <ControlLabel className="mb-0">Canhoto (espelhar)</ControlLabel>
+        <Toggle checked={view.lefty} onChange={view.setLefty} label="Canhoto" />
       </section>
 
       <section>
@@ -124,6 +134,9 @@ export function SongControls({ view }: SongControlsProps) {
           label="Afinação"
           options={TUNING_LIST.map((t) => ({ value: t.id, label: t.label }))}
         />
+        <div className="mt-3">
+          <TuningMap tuning={view.tuning} />
+        </div>
       </section>
 
       <section>
@@ -143,28 +156,9 @@ export function SongControls({ view }: SongControlsProps) {
           onChange={view.setFontStep}
           min={FONT_STEP_LIMITS.min}
           max={FONT_STEP_LIMITS.max}
-          label="tamanho do texto"
+          label="tamanho"
           format={(v) => `${v * 10}%`}
         />
-      </section>
-
-      {/* diagrama do acorde clicado */}
-      <section className="border-t border-stroke-100 pt-4">
-        <ControlLabel>Shape na afinação atual</ControlLabel>
-        {view.selectedVoicing ? (
-          <div className="flex justify-center">
-            <ChordDiagram
-              voicing={view.selectedVoicing.voicing}
-              tuning={view.tuning}
-              label={view.selectedVoicing.label}
-            />
-          </div>
-        ) : (
-          <p className="text-xs text-neutral-500">
-            Toque em qualquer acorde da cifra para ver o desenho calculado para a afinação
-            selecionada.
-          </p>
-        )}
       </section>
     </Card>
   );

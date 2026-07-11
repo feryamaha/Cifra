@@ -1,16 +1,9 @@
 'use client';
 
-/**
- * useSongView.hook.ts
- * TODA a lógica da tela de cifra vive aqui: estado dos controles e
- * derivação do modelo de renderização via funções puras de
- * src/utils/song-view.helpers.ts. Os componentes de src/components/song/
- * recebem o SongViewModel pronto e APENAS renderizam.
- */
-
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { TUNINGS } from '@/data/music/tunings.data';
 import { mod12, nameToPc } from '@/lib/music/notes';
+import { buildSongDeepLinkQuery, parseSongDeepLink } from '@/lib/share/deep-link';
 import type { NotationMode, ViewOptions } from '@/types/music/transform.types';
 import type { Song } from '@/types/song/song.types';
 import type { SongViewModel, ViewType } from '@/types/song/song-view.types';
@@ -18,8 +11,10 @@ import {
   buildMapSections,
   buildRenderedSections,
   buildScaleDegreeBadges,
+  collectUniqueChords,
   detectChordSequences,
   keyNameOf,
+  resolveChordVoicings,
   resolveSelectedVoicing,
   transposeForKeyRoot,
 } from '@/utils/song-view.helpers';
@@ -31,10 +26,53 @@ export function useSongView(song: Song): SongViewModel {
   const [capo, setCapo] = useState(0);
   const [notation, setNotation] = useState<NotationMode>('letters');
   const [simplified, setSimplified] = useState(false);
-  const [tuningId, setTuningId] = useState('standard');
+  const [tuningId, setTuningId] = useState(song.tuning || 'standard');
   const [viewType, setViewType] = useState<ViewType>('chords-lyrics');
+  const [twoColumns, setTwoColumns] = useState(false);
+  const [lefty, setLefty] = useState(false);
+  const [inlineDiagrams, setInlineDiagrams] = useState(false);
   const [selectedChord, setSelectedChord] = useState<string | null>(null);
   const [fontStep, setFontStep] = useState(10);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const p = parseSongDeepLink(window.location.search);
+    if (p.transpose !== undefined) setTranspose(p.transpose);
+    if (p.capo !== undefined) setCapo(p.capo);
+    if (p.tuningId) setTuningId(p.tuningId);
+    if (p.notation) setNotation(p.notation);
+    if (p.simplified !== undefined) setSimplified(p.simplified);
+    if (p.viewType) setViewType(p.viewType);
+    if (p.twoColumns !== undefined) setTwoColumns(p.twoColumns);
+    if (p.lefty !== undefined) setLefty(p.lefty);
+    if (p.inlineDiagrams !== undefined) setInlineDiagrams(p.inlineDiagrams);
+    setHydrated(true);
+  }, []);
+
+  const deepLinkQuery = useMemo(
+    () =>
+      buildSongDeepLinkQuery({
+        transpose,
+        capo,
+        tuningId,
+        notation,
+        simplified,
+        viewType,
+        twoColumns,
+        lefty,
+        inlineDiagrams,
+      }),
+    [transpose, capo, tuningId, notation, simplified, viewType, twoColumns, lefty, inlineDiagrams],
+  );
+
+  useEffect(() => {
+    if (!hydrated || typeof window === 'undefined') return;
+    const path = window.location.pathname;
+    const next = `${path}${deepLinkQuery}`;
+    const current = `${path}${window.location.search}`;
+    if (next !== current) window.history.replaceState(null, '', next);
+  }, [deepLinkQuery, hydrated]);
 
   const opts = useMemo<ViewOptions>(
     () => ({ transpose, capo, notation, simplified, accidentalStyle: 'flat' }),
@@ -45,23 +83,29 @@ export function useSongView(song: Song): SongViewModel {
   const shapeKeyPc = mod12(currentKeyPc - capo);
   const currentKeyName = keyNameOf(currentKeyPc);
   const shapeKeyName = keyNameOf(shapeKeyPc);
-  const tuning = TUNINGS[tuningId];
+  const tuning = TUNINGS[tuningId] ?? TUNINGS.standard;
 
   const renderedSections = useMemo(
     () => buildRenderedSections(song, originalKeyPc, opts),
     [song, originalKeyPc, opts],
   );
-
   const mapSections = useMemo(() => buildMapSections(song), [song]);
-
-  const selectedVoicing = useMemo(
-    () => resolveSelectedVoicing(selectedChord, originalKeyPc, opts, tuning),
-    [selectedChord, originalKeyPc, opts, tuning],
+  const resolveVoicing = useCallback(
+    (originalSymbol: string) => resolveSelectedVoicing(originalSymbol, originalKeyPc, opts, tuning),
+    [originalKeyPc, opts, tuning],
   );
-
+  const resolveVoicings = useCallback(
+    (originalSymbol: string) =>
+      resolveChordVoicings(originalSymbol, originalKeyPc, opts, tuning, 10),
+    [originalKeyPc, opts, tuning],
+  );
+  const selectedVoicing = useMemo(
+    () => (selectedChord ? resolveVoicing(selectedChord) : null),
+    [selectedChord, resolveVoicing],
+  );
   const scaleDegreeBadges = useMemo(() => buildScaleDegreeBadges(), []);
-
   const chordSequences = useMemo(() => detectChordSequences(song), [song]);
+  const uniqueChords = useMemo(() => collectUniqueChords(song), [song]);
 
   const selectKeyRoot = (root: string) => {
     const semitones = transposeForKeyRoot(root, originalKeyPc);
@@ -79,13 +123,21 @@ export function useSongView(song: Song): SongViewModel {
     tuningId,
     tuning,
     viewType,
+    twoColumns,
+    lefty,
+    inlineDiagrams,
     fontStep,
     fontScale: fontStep / 10,
+    selectedChord,
     selectedVoicing,
+    resolveVoicing,
+    resolveVoicings,
     renderedSections,
     mapSections,
     scaleDegreeBadges,
     chordSequences,
+    uniqueChords,
+    deepLinkQuery,
     selectKeyRoot,
     selectChord: setSelectedChord,
     setTranspose,
@@ -95,5 +147,8 @@ export function useSongView(song: Song): SongViewModel {
     setTuningId,
     setViewType,
     setFontStep,
+    setTwoColumns,
+    setLefty,
+    setInlineDiagrams,
   };
 }

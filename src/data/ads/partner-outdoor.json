@@ -1,0 +1,12 @@
+{
+  "copyright": "© Cifra Tom",
+  "intervalMs": 5000,
+  "slides": [
+    {
+      "id": "cifratom-marca",
+      "image": "/favico.png",
+      "text": "Cifra Tom: cifras para violão, sem interrupções no meio da música.",
+      "href": "/"
+    }
+  ]
+}

@@ -5,11 +5,8 @@ import type { Song, SongSection } from './song.types';
 
 export type ViewType = 'chords-lyrics' | 'lyrics' | 'map' | 'chords-only';
 
-/** Parte de linha já processada pelo pipeline (pronta para renderizar). */
 export interface RenderedPart {
-  /** símbolo original no tom da música (chave para clique/diagrama) */
   chord: string | null;
-  /** o que aparece impresso (já transposto/convertido), ou null sem acorde */
   display: string | null;
   text: string;
 }
@@ -42,10 +39,6 @@ export interface ChordSequence {
   sections: string[];
 }
 
-/**
- * Modelo completo da tela de cifra, produzido por useSongView.hook.ts.
- * Os componentes de src/components/song/ APENAS renderizam este modelo.
- */
 export interface SongViewModel {
   song: Song;
   currentKeyName: string;
@@ -57,18 +50,21 @@ export interface SongViewModel {
   tuningId: string;
   tuning: Tuning;
   viewType: ViewType;
-  /** passo do tamanho de fonte (8..16, onde 10 = 100%) */
+  twoColumns: boolean;
+  lefty: boolean;
+  inlineDiagrams: boolean;
   fontStep: number;
-  /** escala aplicada no CSS (fontStep / 10) */
   fontScale: number;
+  selectedChord: string | null;
   selectedVoicing: SelectedVoicing | null;
+  resolveVoicing: (originalSymbol: string) => SelectedVoicing | null;
+  resolveVoicings: (originalSymbol: string) => { label: string; voicings: Voicing[] } | null;
   renderedSections: RenderedSection[];
-  /** seções na ordem de execução do mapa (com repetições) */
   mapSections: SongSection[];
-  /** graus dos botões de tom relativos ao tom atual */
   scaleDegreeBadges: ScaleDegreeBadge[];
-  /** sequências de acordes detectadas na música */
   chordSequences: ChordSequence[];
+  uniqueChords: string[];
+  deepLinkQuery: string;
   selectKeyRoot: (root: string) => void;
   selectChord: (symbol: string) => void;
   setTranspose: (value: number) => void;
@@ -78,6 +74,9 @@ export interface SongViewModel {
   setTuningId: (id: string) => void;
   setViewType: (value: ViewType) => void;
   setFontStep: (value: number) => void;
+  setTwoColumns: (value: boolean) => void;
+  setLefty: (value: boolean) => void;
+  setInlineDiagrams: (value: boolean) => void;
 }
 
 export interface SongViewProps {
@@ -95,10 +94,15 @@ export interface SongControlsProps {
 export interface SectionCardProps {
   section: RenderedSection;
   viewType: ViewType;
+  selectedChord: string | null;
+  tuning: Tuning;
+  resolveVoicing: (originalSymbol: string) => SelectedVoicing | null;
+  resolveVoicings: (originalSymbol: string) => { label: string; voicings: Voicing[] } | null;
   onChordClick: (symbol: string) => void;
+  lefty?: boolean;
+  inlineDiagrams?: boolean;
 }
 
 export interface SongMapProps {
-  /** seções na ordem tocada, repetições incluídas */
   sections: SongSection[];
 }

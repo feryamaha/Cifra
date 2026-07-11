@@ -1,42 +1,76 @@
 'use client';
 
 import Link from 'next/link';
+import { signOut, useSession } from 'next-auth/react';
 import { useState } from 'react';
+import { Logo } from '@/components/layout/Logo';
 import { cn } from '@/lib/utils';
 
 export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { data: session, status } = useSession();
+  const loggedInAsUser = status === 'authenticated' && Boolean(session?.user);
+  const nav = 'transition-colors duration-fast hover:text-primary-300';
+
+  const links: [string, string][] = [
+    ['/', 'Músicas'],
+    ['/acordes', 'Acordes'],
+    ['/metronomo', 'Metrônomo'],
+    ['/afinador', 'Afinador'],
+    ['/historico', 'Histórico'],
+    ['/faq', 'FAQ'],
+    ['/adicionar', 'Adicionar'],
+  ];
 
   return (
-    <header className="border-b border-stroke-100 bg-secondary-950/90 backdrop-blur">
+    <header className="sticky top-0 z-30 border-b border-stroke-100/80 bg-secondary-950/80 py-4 backdrop-blur-md print:hidden">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
-        <Link href="/" className="font-chakra text-xl font-bold tracking-tight text-neutral-900">
-          Cifra<span className="text-primary-400">Lab</span>
+        <Link href="/" className="group transition-colors">
+          <Logo />
         </Link>
 
-        {/* Nav desktop */}
-        <nav className="hidden items-center gap-5 text-sm text-neutral-700 @tablet:flex">
-          <Link href="/" className="transition-colors hover:text-primary-300">
-            Músicas
-          </Link>
-          <span className="cursor-not-allowed text-neutral-500" title="Em breve">
-            Afinador
-          </span>
-          <span className="cursor-not-allowed text-neutral-500" title="Em breve">
-            Entrar
-          </span>
+        <nav className="hidden items-center gap-4 text-sm text-neutral-700 @Desktop:flex">
+          {links.map(([href, label]) => (
+            <Link key={href} href={href} className={nav}>
+              {label}
+            </Link>
+          ))}
+          {loggedInAsUser ? (
+            <>
+              <Link href="/conta/favoritos" className={nav}>
+                Favoritos
+              </Link>
+              <Link href="/conta/envios" className={nav}>
+                Meus envios
+              </Link>
+              <button
+                type="button"
+                onClick={() => signOut({ callbackUrl: '/' })}
+                className="rounded-lg border border-stroke-200 px-3 py-1.5 text-xs hover:border-primary-400"
+              >
+                Sair
+              </button>
+            </>
+          ) : (
+            <Link
+              href="/entrar"
+              className="rounded-lg bg-primary-400 px-3 py-1.5 font-chakra text-xs font-semibold text-secondary-950 hover:bg-primary-300"
+            >
+              Entrar
+            </Link>
+          )}
         </nav>
 
-        {/* Botao hamburger mobile */}
         <button
           type="button"
           onClick={() => setMenuOpen(!menuOpen)}
           aria-label="Menu"
+          aria-expanded={menuOpen}
           className={cn(
-            'cursor-pointer rounded-md p-2 text-neutral-700 transition-colors hover:text-primary-300 @tablet:hidden',
+            'cursor-pointer rounded-md p-2 text-neutral-700 hover:text-primary-300 @Desktop:hidden',
           )}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
             {menuOpen ? (
               <path
                 d="M6 6l12 12M18 6l-12 12"
@@ -56,23 +90,31 @@ export function Header() {
         </button>
       </div>
 
-      {/* Nav mobile colapsavel */}
       {menuOpen && (
-        <nav className="border-t border-stroke-100 bg-secondary-950 px-4 py-3 @tablet:hidden">
+        <nav className="border-t border-stroke-100 bg-secondary-950/95 px-4 py-3 @Desktop:hidden">
           <div className="flex flex-col gap-3 text-sm text-neutral-700">
-            <Link
-              href="/"
-              onClick={() => setMenuOpen(false)}
-              className="transition-colors hover:text-primary-300"
-            >
-              Músicas
-            </Link>
-            <span className="cursor-not-allowed text-neutral-500" title="Em breve">
-              Afinador
-            </span>
-            <span className="cursor-not-allowed text-neutral-500" title="Em breve">
-              Entrar
-            </span>
+            {links.map(([href, label]) => (
+              <Link key={href} href={href} onClick={() => setMenuOpen(false)} className={nav}>
+                {label}
+              </Link>
+            ))}
+            {loggedInAsUser ? (
+              <>
+                <Link href="/conta/favoritos" onClick={() => setMenuOpen(false)}>
+                  Favoritos
+                </Link>
+                <Link href="/conta/envios" onClick={() => setMenuOpen(false)}>
+                  Meus envios
+                </Link>
+                <button type="button" onClick={() => signOut({ callbackUrl: '/' })}>
+                  Sair
+                </button>
+              </>
+            ) : (
+              <Link href="/entrar" onClick={() => setMenuOpen(false)} className="text-primary-400">
+                Entrar
+              </Link>
+            )}
           </div>
         </nav>
       )}
