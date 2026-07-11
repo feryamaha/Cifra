@@ -2,6 +2,10 @@
 /node_modules
 /.pnp
 .pnp.js
+# canônico: bun.lock (README). Evita npm na Vercel por package-lock residual.
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
 
 # next.js
 /.next/
