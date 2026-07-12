@@ -81,6 +81,8 @@ export interface SongViewModel {
 
 export interface SongViewProps {
   song: Song;
+  /** SPEC_010 C3: único ponto de ad na página de cifra = fim do aside */
+  adsOn?: boolean;
 }
 
 export interface SongHeaderProps {

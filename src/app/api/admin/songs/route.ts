@@ -1,8 +1,8 @@
 import { jsonNoStore } from '@/lib/security/http-headers';
 import { isAdminRequest, unauthorized } from '@/lib/server/require-admin';
-import { getCatalog } from '@/lib/server/song-store';
+import { getUnifiedCatalog } from '@/lib/songs/server-catalog';
 
 export async function GET(): Promise<Response> {
   if (!(await isAdminRequest())) return unauthorized();
-  return jsonNoStore({ songs: getCatalog({ admin: true }) });
+  return jsonNoStore({ songs: await getUnifiedCatalog({ admin: true }) });
 }

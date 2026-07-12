@@ -79,6 +79,35 @@ export function getPartnerOutdoor(): PartnerOutdoorConfig {
   );
 }
 
+/** Contato comercial placeholder (Fernando fornece o definitivo depois). */
+export const ADS_CONTACT_EMAIL = 'anuncie@cifratom.com.br';
+
+/**
+ * Card "house ad" (SPEC_010 C2-R): o MESMO card slider da home/footer,
+ * reutilizado em toda página com área de ads, com placeholder de venda:
+ * logo + gancho "Adicione aqui a sua publicidade" + contato.
+ */
+export function getHouseAdConfig(): PartnerOutdoorConfig {
+  return {
+    copyright: `Anuncie aqui · ${ADS_CONTACT_EMAIL}`,
+    intervalMs: DEFAULT_INTERVAL_MS,
+    slides: [
+      {
+        id: 'house-1',
+        image: '/favico.png',
+        text: 'Adicione aqui a sua publicidade. Alcance músicos que tocam de verdade.',
+        href: `mailto:${ADS_CONTACT_EMAIL}`,
+      },
+      {
+        id: 'house-2',
+        image: '/favico.png',
+        text: `Espaço de parceiro disponível. Fale com a gente: ${ADS_CONTACT_EMAIL}`,
+        href: `mailto:${ADS_CONTACT_EMAIL}`,
+      },
+    ],
+  };
+}
+
 /**
  * Footer: 3 cards em linha, cada um com carousel de até 5 slides (15 ads).
  * Mesmo componente da home; autoplay infinito (intervalMs, default 5s).

@@ -40,6 +40,7 @@ export async function POST(req: Request): Promise<Response> {
   const parsed = postSchema.safeParse(json);
   if (!parsed.success) return jsonNoStore({ error: 'Dados inválidos.' }, { status: 400 });
   try {
+    // Idempotente: refavoritar não é erro (índice único user_id+song_slug)
     const [row] = await db
       .insert(userFavorites)
       .values({
@@ -47,8 +48,9 @@ export async function POST(req: Request): Promise<Response> {
         songSlug: parsed.data.songSlug,
         collectionId: parsed.data.collectionId ?? null,
       })
+      .onConflictDoNothing()
       .returning();
-    return jsonNoStore({ ok: true, favorite: row }, { status: 201 });
+    return jsonNoStore({ ok: true, favorite: row ?? null }, { status: 201 });
   } catch {
     return jsonNoStore(
       { error: 'Não foi possível salvar. Rode db:push se necessário.' },

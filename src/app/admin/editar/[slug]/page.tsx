@@ -1,12 +1,12 @@
 import { notFound } from 'next/navigation';
 import { AdminSongEditor } from '@/components/admin/AdminSongEditor';
-import { getCatalogSongBySlug } from '@/lib/server/song-store';
+import { getUnifiedSongBySlug } from '@/lib/songs/server-catalog';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminEditSongPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const song = getCatalogSongBySlug(slug, { admin: true });
+  const song = await getUnifiedSongBySlug(slug, { admin: true });
   if (!song) notFound();
 
   return (

@@ -3,7 +3,9 @@
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
+import { PartnerOutdoorCard } from '@/components/ads/PartnerOutdoorCard';
 import { CommentSection } from '@/components/song/CommentSection';
+import { getHouseAdConfig } from '@/lib/ads/partner-outdoor';
 import { recordVisit } from '@/lib/history/visit-history';
 import { getUserSongBySlug } from '@/lib/songs/user-songs';
 import type { Song } from '@/types/song/song.types';
@@ -21,10 +23,12 @@ function artistSlug(name: string): string {
 export function SongPageClient({
   slug,
   serverSong,
+  adsOn = false,
 }: {
   slug: string;
   serverSong: Song | null;
   isAdmin?: boolean;
+  adsOn?: boolean;
 }) {
   const { data: session } = useSession();
   const [song, setSong] = useState<Song | null>(serverSong);
@@ -102,9 +106,15 @@ export function SongPageClient({
         )}
         {favMsg && <span className="text-xs text-neutral-500">{favMsg}</span>}
       </div>
-      <SongView song={song} />
+      <SongView song={song} adsOn={adsOn} />
       <div className="mx-auto max-w-[1440px] px-3 pb-12 print:hidden">
         <CommentSection songSlug={song.slug} />
+        {/* SPEC_010 C3 mobile: DEPOIS dos comentários, nunca junto da cifra */}
+        {adsOn && (
+          <div className="mt-6 flex justify-center @tablet:hidden">
+            <PartnerOutdoorCard config={getHouseAdConfig()} />
+          </div>
+        )}
       </div>
     </>
   );

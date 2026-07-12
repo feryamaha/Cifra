@@ -1,8 +1,11 @@
+import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { db } from '@/lib/db';
+import { songVersions, works } from '@/lib/db/schema';
 import { jsonNoStore } from '@/lib/security/http-headers';
 import { parseSongPayload } from '@/lib/security/song-schema';
 import { isAdminRequest, unauthorized } from '@/lib/server/require-admin';
-import { getCatalogSongBySlug, saveOverride } from '@/lib/server/song-store';
+import type { Song } from '@/types/song/song.types';
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -19,6 +22,29 @@ const putSchema = z
   })
   .strict();
 
+/** Versão do catálogo (qualquer status) por slug, direto no Neon (SPEC_010 A1/A2). */
+async function findVersionBySlug(slug: string) {
+  const rows = await db
+    .select({ version: songVersions, work: works })
+    .from(songVersions)
+    .innerJoin(works, eq(songVersions.workId, works.id))
+    .where(eq(songVersions.slug, slug))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+function toAdminSong(row: NonNullable<Awaited<ReturnType<typeof findVersionBySlug>>>) {
+  const payload = row.version.payload as Song;
+  return {
+    ...payload,
+    id: row.version.id,
+    slug: row.version.slug,
+    title: row.work.title.normalize('NFC'),
+    artist: row.work.artist.normalize('NFC'),
+    published: row.version.status === 'published',
+  };
+}
+
 export async function GET(_req: Request, { params }: Params): Promise<Response> {
   if (!(await isAdminRequest())) return unauthorized();
   const { slug: raw } = await params;
@@ -26,9 +52,9 @@ export async function GET(_req: Request, { params }: Params): Promise<Response> 
   if (!slugParsed.success) {
     return jsonNoStore({ error: 'Slug inválido.' }, { status: 400 });
   }
-  const song = getCatalogSongBySlug(slugParsed.data, { admin: true });
-  if (!song) return jsonNoStore({ error: 'Música não encontrada.' }, { status: 404 });
-  return jsonNoStore({ song });
+  const row = await findVersionBySlug(slugParsed.data);
+  if (!row) return jsonNoStore({ error: 'Música não encontrada.' }, { status: 404 });
+  return jsonNoStore({ song: toAdminSong(row) });
 }
 
 export async function PUT(req: Request, { params }: Params): Promise<Response> {
@@ -40,7 +66,7 @@ export async function PUT(req: Request, { params }: Params): Promise<Response> {
   }
   const slug = slugParsed.data;
 
-  const existing = getCatalogSongBySlug(slug, { admin: true });
+  const existing = await findVersionBySlug(slug);
   if (!existing) return jsonNoStore({ error: 'Música não encontrada.' }, { status: 404 });
 
   let json: unknown;
@@ -56,8 +82,9 @@ export async function PUT(req: Request, { params }: Params): Promise<Response> {
   }
 
   if (parsed.data.song !== undefined) {
-    const raw = parsed.data.song;
-    const candidate = typeof raw === 'object' && raw !== null ? { ...raw, slug } : raw;
+    const rawSong = parsed.data.song;
+    const candidate =
+      typeof rawSong === 'object' && rawSong !== null ? { ...rawSong, slug } : rawSong;
     const songParsed = parseSongPayload(candidate);
     if (!songParsed.ok) {
       return jsonNoStore(
@@ -65,13 +92,25 @@ export async function PUT(req: Request, { params }: Params): Promise<Response> {
         { status: 400 },
       );
     }
-    saveOverride(slug, { song: { ...songParsed.song, slug } });
-  }
-  if (typeof parsed.data.published === 'boolean') {
-    saveOverride(slug, { published: parsed.data.published });
+    await db
+      .update(songVersions)
+      .set({ payload: { ...songParsed.song, slug }, updatedAt: new Date() })
+      .where(eq(songVersions.id, existing.version.id));
   }
 
-  return jsonNoStore({ song: getCatalogSongBySlug(slug, { admin: true }) });
+  if (typeof parsed.data.published === 'boolean') {
+    await db
+      .update(songVersions)
+      .set({
+        status: parsed.data.published ? 'published' : 'draft',
+        publishedAt: parsed.data.published ? (existing.version.publishedAt ?? new Date()) : null,
+        updatedAt: new Date(),
+      })
+      .where(eq(songVersions.id, existing.version.id));
+  }
+
+  const updated = await findVersionBySlug(slug);
+  return jsonNoStore({ song: updated ? toAdminSong(updated) : null });
 }
 
 export async function DELETE(_req: Request, { params }: Params): Promise<Response> {
@@ -81,9 +120,8 @@ export async function DELETE(_req: Request, { params }: Params): Promise<Respons
   if (!slugParsed.success) {
     return jsonNoStore({ error: 'Slug inválido.' }, { status: 400 });
   }
-  const slug = slugParsed.data;
-  const existing = getCatalogSongBySlug(slug, { admin: true });
+  const existing = await findVersionBySlug(slugParsed.data);
   if (!existing) return jsonNoStore({ error: 'Música não encontrada.' }, { status: 404 });
-  saveOverride(slug, { deleted: true, song: undefined, published: undefined });
+  await db.delete(songVersions).where(eq(songVersions.id, existing.version.id));
   return jsonNoStore({ ok: true });
 }

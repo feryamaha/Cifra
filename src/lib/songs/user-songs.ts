@@ -97,7 +97,10 @@ export function userSongFromDraft(draft: SongDraft): Song {
     key,
     originalKey: key,
     tuning: draft.tuning || 'standard',
-    chords: draft.chords,
+    // Únicos na ordem de aparição: draft.chords traz OCORRÊNCIAS (uma música
+    // longa passa de 200 e estourava o teto do schema Zod: falso positivo
+    // "cifra inválida" no import em lote)
+    chords: [...new Set(draft.chords)],
     bpm: draft.bpm,
     timeSignature: draft.timeSignature || '4/4',
     source: 'user',

@@ -41,6 +41,10 @@ const securityHeaders = [
   },
   { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' },
   { key: 'X-DNS-Prefetch-Control', value: 'off' },
+  // SPEC_010 E2: isolamento de janela/recursos
+  { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+  { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' },
+  { key: 'X-Permitted-Cross-Domain-Policies', value: 'none' },
 ];
 
 /** R32: dados de sessão / CRM / envios não podem ir para cache compartilhado. */

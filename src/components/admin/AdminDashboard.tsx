@@ -8,7 +8,7 @@ import { AdminUsersTable } from '@/components/admin/AdminUsersTable';
 import { type RejectionCategory, RejectVersionModal } from '@/components/admin/RejectVersionModal';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
-import type { CatalogEntry } from '@/lib/server/song-store';
+import type { CatalogEntry } from '@/lib/songs/server-catalog';
 import { cn } from '@/lib/utils';
 
 export type PendingVersion = {
@@ -188,6 +188,7 @@ export function AdminDashboard({
                     <th className="px-3 py-2.5">Música</th>
                     <th className="px-3 py-2.5">Artista</th>
                     <th className="px-3 py-2.5">Status</th>
+                    <th className="px-3 py-2.5">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -208,6 +209,14 @@ export function AdminDashboard({
                         ) : (
                           <Badge variant="warning">oculta</Badge>
                         )}
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <Link
+                          href={`/admin/editar/${song.slug}`}
+                          className="rounded-lg border border-stroke-200 px-3 py-1 text-xs text-primary-300 hover:border-primary-500"
+                        >
+                          Editar
+                        </Link>
                       </td>
                     </tr>
                   ))}

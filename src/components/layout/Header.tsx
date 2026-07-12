@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { signOut, useSession } from 'next-auth/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Logo } from '@/components/layout/Logo';
 import { cn } from '@/lib/utils';
 
@@ -10,6 +10,27 @@ export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { data: session, status } = useSession();
   const loggedInAsUser = status === 'authenticated' && Boolean(session?.user);
+  // Admin é sessão SEPARADA (cookie próprio, rota /admin/login): o header
+  // precisa refletir "logado" também para o admin (UX: nunca mostrar Entrar
+  // para quem já entrou).
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    void fetch('/api/admin/me')
+      .then((r) => {
+        if (alive) setIsAdmin(r.ok);
+      })
+      .catch(() => {
+        if (alive) setIsAdmin(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const adminSignOut = async () => {
+    await fetch('/api/admin/logout', { method: 'POST' }).catch(() => {});
+    window.location.href = '/';
+  };
   const nav = 'transition-colors duration-fast hover:text-primary-300';
 
   const links: [string, string][] = [
@@ -46,6 +67,19 @@ export function Header() {
               <button
                 type="button"
                 onClick={() => signOut({ callbackUrl: '/' })}
+                className="rounded-lg border border-stroke-200 px-3 py-1.5 text-xs hover:border-primary-400"
+              >
+                Sair
+              </button>
+            </>
+          ) : isAdmin ? (
+            <>
+              <Link href="/admin" className={nav}>
+                Painel admin
+              </Link>
+              <button
+                type="button"
+                onClick={() => void adminSignOut()}
                 className="rounded-lg border border-stroke-200 px-3 py-1.5 text-xs hover:border-primary-400"
               >
                 Sair
@@ -107,6 +141,15 @@ export function Header() {
                   Meus envios
                 </Link>
                 <button type="button" onClick={() => signOut({ callbackUrl: '/' })}>
+                  Sair
+                </button>
+              </>
+            ) : isAdmin ? (
+              <>
+                <Link href="/admin" onClick={() => setMenuOpen(false)}>
+                  Painel admin
+                </Link>
+                <button type="button" onClick={() => void adminSignOut()}>
                   Sair
                 </button>
               </>

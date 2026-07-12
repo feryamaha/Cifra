@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { getUnifiedCatalog, listPendingVersions } from '@/lib/songs/server-catalog';
 
@@ -18,6 +19,12 @@ export default async function AdminPage() {
           Cifras enviadas por usuários autenticados entram na fila Postgres. Só publicam após
           aprovação. Rejeição grava motivo visível em &quot;Meus envios&quot;.
         </p>
+        <Link
+          href="/admin/importar"
+          className="mt-4 inline-flex items-center rounded-xl border border-primary-600 bg-primary-400 px-4 py-2 text-sm font-semibold text-secondary-950 transition-colors hover:bg-primary-300"
+        >
+          + Importar em lote (até 20 cifras)
+        </Link>
       </div>
       <AdminDashboard songs={songs} pendingVersions={pendingVersions} />
     </div>

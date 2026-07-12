@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "eyebrow": "Publicidade",
+  "title": "Adicione aqui a sua publicidade",
+  "body": "Alcance músicos que tocam de verdade. Espaço de parceiro no Cifra Tom.",
+  "contactEmail": "anuncie@cifratom.com.br",
+  "ctaLabel": "Quero anunciar",
+  "durations": {
+    "default": 10,
+    "musica": 10,
+    "portal": 20
+  },
+  "musicaMessage": "Sua cifra será exibida ao final deste anúncio. Sem interrupções durante a leitura!"
+}

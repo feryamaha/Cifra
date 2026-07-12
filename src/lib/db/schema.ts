@@ -6,6 +6,7 @@
 import { relations } from 'drizzle-orm';
 import {
   boolean,
+  index,
   integer,
   jsonb,
   pgEnum,
@@ -13,6 +14,7 @@ import {
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import type { Song } from '@/types/song/song.types';
 
@@ -101,25 +103,30 @@ export const works = pgTable('works', {
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
 });
 
-export const songVersions = pgTable('song_versions', {
-  id: text('id')
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  workId: text('work_id')
-    .notNull()
-    .references(() => works.id, { onDelete: 'cascade' }),
-  slug: text('slug').notNull().unique(),
-  status: versionStatusEnum('status').notNull().default('pending_review'),
-  label: text('label'),
-  authorId: text('author_id').references(() => users.id, { onDelete: 'set null' }),
-  payload: jsonb('payload').$type<Song>().notNull(),
-  rejectionReason: text('rejection_reason'),
-  rejectionCategory: rejectionCategoryEnum('rejection_category'),
-  revisionCount: integer('revision_count').notNull().default(0),
-  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
-  publishedAt: timestamp('published_at', { mode: 'date' }),
-});
+export const songVersions = pgTable(
+  'song_versions',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    workId: text('work_id')
+      .notNull()
+      .references(() => works.id, { onDelete: 'cascade' }),
+    slug: text('slug').notNull().unique(),
+    status: versionStatusEnum('status').notNull().default('pending_review'),
+    label: text('label'),
+    authorId: text('author_id').references(() => users.id, { onDelete: 'set null' }),
+    payload: jsonb('payload').$type<Song>().notNull(),
+    rejectionReason: text('rejection_reason'),
+    rejectionCategory: rejectionCategoryEnum('rejection_category'),
+    revisionCount: integer('revision_count').notNull().default(0),
+    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
+    publishedAt: timestamp('published_at', { mode: 'date' }),
+  },
+  // SPEC_010 A6: listagem do catálogo/moderação filtra por status
+  (t) => [index('song_versions_status_idx').on(t.status)],
+);
 
 export const moderationEvents = pgTable('moderation_events', {
   id: text('id')
@@ -192,45 +199,60 @@ export const userCollections = pgTable('user_collections', {
 });
 
 /** SPEC_006 B1 — favoritos (songSlug = identificador público) */
-export const userFavorites = pgTable('user_favorites', {
-  id: text('id')
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  userId: text('user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  songSlug: text('song_slug').notNull(),
-  collectionId: text('collection_id').references(() => userCollections.id, {
-    onDelete: 'set null',
-  }),
-  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
-});
+export const userFavorites = pgTable(
+  'user_favorites',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    songSlug: text('song_slug').notNull(),
+    collectionId: text('collection_id').references(() => userCollections.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  },
+  // SPEC_010 A6: um favorito por (usuário, música)
+  (t) => [uniqueIndex('user_favorites_user_song_uq').on(t.userId, t.songSlug)],
+);
 
 /** SPEC_006 A7 / B2 — views e histórico autenticado */
-export const songViews = pgTable('song_views', {
-  id: text('id')
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  songSlug: text('song_slug').notNull(),
-  userId: text('user_id').references(() => users.id, { onDelete: 'set null' }),
-  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
-});
+export const songViews = pgTable(
+  'song_views',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    songSlug: text('song_slug').notNull(),
+    userId: text('user_id').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  },
+  // SPEC_010 A6: trending agrupa por song_slug
+  (t) => [index('song_views_song_slug_idx').on(t.songSlug)],
+);
 
 export const commentStatusEnum = pgEnum('comment_status', ['pending', 'published', 'rejected']);
 
 /** SPEC_006 B3 */
-export const songComments = pgTable('song_comments', {
-  id: text('id')
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  songSlug: text('song_slug').notNull(),
-  userId: text('user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  text: text('text').notNull(),
-  status: commentStatusEnum('status').notNull().default('pending'),
-  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
-});
+export const songComments = pgTable(
+  'song_comments',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    songSlug: text('song_slug').notNull(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    text: text('text').notNull(),
+    status: commentStatusEnum('status').notNull().default('pending'),
+    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  },
+  // SPEC_010 A6: comentários publicados por música
+  (t) => [index('song_comments_song_status_idx').on(t.songSlug, t.status)],
+);
 
 /** SPEC_006 B4 */
 export const versionVotes = pgTable('version_votes', {

@@ -10,7 +10,7 @@ import type { Provider } from 'next-auth/providers';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import { z } from 'zod';
-import { db } from '@/lib/db';
+import { db, getDb } from '@/lib/db';
 import { accounts, sessions, users, verificationTokens } from '@/lib/db/schema';
 import { rateLimitCheck } from '@/lib/security/rate-limit';
 import { verifyPassword } from './password';
@@ -56,6 +56,7 @@ const providers: Provider[] = [
         name: user.name,
         image: user.image,
         role: 'user' as const,
+        plan: user.plan === 'premium' ? ('premium' as const) : ('free' as const),
       };
     },
   }),
@@ -73,13 +74,18 @@ if (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
 
 const isProd = process.env.NODE_ENV === 'production';
 
+/** Adapter só com DATABASE_URL: evita Proxy no collect do build e tipo inválido no DrizzleAdapter. */
+const hasDatabaseUrl = Boolean(process.env.DATABASE_URL?.trim());
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: DrizzleAdapter(db, {
-    usersTable: users,
-    accountsTable: accounts,
-    sessionsTable: sessions,
-    verificationTokensTable: verificationTokens,
-  }),
+  adapter: hasDatabaseUrl
+    ? DrizzleAdapter(getDb(), {
+        usersTable: users,
+        accountsTable: accounts,
+        sessionsTable: sessions,
+        verificationTokensTable: verificationTokens,
+      })
+    : undefined,
   session: {
     strategy: 'jwt',
     maxAge: 7 * 24 * 60 * 60,
@@ -95,6 +101,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.id = user.id;
         token.email = user.email ?? token.email;
+        const plan = (user as { plan?: 'free' | 'premium' }).plan;
+        token.plan = plan === 'premium' ? 'premium' : 'free';
       }
       // Sessão de usuário final: role sempre "user" (admin é outro login)
       token.role = 'user';
@@ -104,6 +112,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (session.user) {
         session.user.id = (token.id as string) ?? token.sub ?? '';
         session.user.role = 'user';
+        session.user.plan = token.plan === 'premium' ? 'premium' : 'free';
       }
       return session;
     },

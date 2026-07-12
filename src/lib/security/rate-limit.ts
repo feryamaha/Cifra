@@ -116,4 +116,6 @@ export const RATE = {
   submit: { limit: 20, windowMs: 60 * 60 * 1000 },
   forgot: { limit: 5, windowMs: 60 * 60 * 1000 },
   adminLogin: { limit: 8, windowMs: 15 * 60 * 1000 },
+  // SPEC_010 B1: importação em lote (cada req carrega até 20 cifras)
+  admin: { limit: 30, windowMs: 60 * 60 * 1000 },
 } as const;

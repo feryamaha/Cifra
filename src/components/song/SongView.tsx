@@ -7,8 +7,10 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
+import { PartnerOutdoorCard } from '@/components/ads/PartnerOutdoorCard';
 import { AUTO_SCROLL_OPTIONS } from '@/data/song-view/auto-scroll.data';
 import { useAutoScroll, useSongView } from '@/hooks/song';
+import { getHouseAdConfig } from '@/lib/ads/partner-outdoor';
 import { downloadTextFile, printSongAsPdf, songViewToTxt } from '@/lib/export/song-export';
 import { cn } from '@/lib/utils';
 import type { AutoScrollSpeed } from '@/types/song/auto-scroll.types';
@@ -19,7 +21,7 @@ import { SongControls } from './SongControls';
 import { SongHeader } from './SongHeader';
 import { SongMap } from './SongMap';
 
-export function SongView({ song }: SongViewProps) {
+export function SongView({ song, adsOn = false }: SongViewProps) {
   const view = useSongView(song);
   const [controlsOpen, setControlsOpen] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
@@ -261,6 +263,12 @@ export function SongView({ song }: SongViewProps) {
         {/* ============ COLUNA DA TABELA DE SEQUÊNCIAS ============ */}
         <aside className="space-y-4 @tablet:sticky @tablet:top-4 @tablet:h-fit">
           <ChordSequencesPanel view={view} />
+          {/* SPEC_010 C3: fim do aside, fora da coluna da cifra, some na impressão */}
+          {adsOn && (
+            <div className="hidden justify-center @tablet:flex">
+              <PartnerOutdoorCard config={getHouseAdConfig()} />
+            </div>
+          )}
         </aside>
       </div>
 

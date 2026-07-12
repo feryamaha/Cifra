@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { AdSlot } from '@/components/ads/AdSlot';
 import { PartnerOutdoorCard } from '@/components/ads/PartnerOutdoorCard';
 import { FOOTER_COLUMNS, SOCIAL_LINKS } from '@/data/site/footer-nav.data';
 import { areAdsEnabled } from '@/lib/ads/ads-enabled';
@@ -16,7 +15,7 @@ export function Footer() {
       <div className="mx-auto max-w-7xl space-y-8 px-4 py-10">
         {adsOn && (
           <>
-            <AdSlot position="footer" />
+            {/* 3 colunas de carrossel de parceiros */}
             {footerCarousel.columns.length > 0 && (
               <div className="grid grid-cols-1 gap-4 @tablet:grid-cols-3 @tablet:gap-5">
                 {footerCarousel.columns.map((column) => (

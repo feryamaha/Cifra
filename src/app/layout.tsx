@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from 'next';
 import { Chakra_Petch, Inter, JetBrains_Mono } from 'next/font/google';
+import { FlashAdModal } from '@/components/ads/FlashAdModal';
 import { SessionProvider } from '@/components/auth/SessionProvider';
 import { Footer } from '@/components/layout/Footer';
 import { Header } from '@/components/layout/Header';
 import { ServiceWorkerRegister } from '@/components/pwa/ServiceWorkerRegister';
+import { areAdsEnabled } from '@/lib/ads/ads-enabled';
 import './globals.css';
 
 const chakra = Chakra_Petch({
@@ -53,6 +55,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ServiceWorkerRegister />
           <Header />
           <main className="flex-1">{children}</main>
+          {areAdsEnabled() && <FlashAdModal />}
           <Footer />
         </SessionProvider>
       </body>

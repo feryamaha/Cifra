@@ -1,13 +1,33 @@
 /**
- * Detecao de pitch por autocorrelacao com parabolic interpolation (afinador, SPEC_006 C1).
+ * Detecção de pitch para o afinador (SPEC_010 rodada 4).
+ *
+ * Motor: McLeod Pitch Method via `pitchy` (MIT). O MPM devolve, além da
+ * frequência, um valor de CLARITY (0..1) que mede quão "limpo" é o pitch:
+ * ruído cacofônico tem clarity baixa e é descartado. Isso elimina os falsos
+ * positivos da autocorrelação crua anterior (qualquer ruído virava nota).
+ *
+ * Anti-falso-positivo em camadas:
+ *  1. minVolumeDecibels: sinal fraco demais é ignorado pelo próprio pitchy.
+ *  2. CLARITY_MIN alto (afinador precisa de leitura estável, não musical).
+ *  3. faixa de frequência do violão (com folga).
+ *  4. mediana das últimas leituras (o componente aplica) mata outliers.
  */
 
+import { PitchDetector } from 'pitchy';
+
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+/** Clarity mínima para aceitar um pitch (0..1). Alto = conservador. */
+export const CLARITY_MIN = 0.92;
+/** Faixa útil para violão: E2 (~82Hz) a E4 (~330Hz), com folga. */
+const MIN_FREQ = 60;
+const MAX_FREQ = 500;
 
 export function frequencyToNote(freq: number): {
   name: string;
   octave: number;
   cents: number;
+  midi: number;
   targetHz: number;
 } {
   const a4 = 440;
@@ -17,63 +37,33 @@ export function frequencyToNote(freq: number): {
   const octave = Math.floor(midi / 12) - 1;
   const targetHz = a4 * 2 ** ((midi - 69) / 12);
   const cents = Math.round(1200 * Math.log2(freq / targetHz));
-  return { name, octave, cents, targetHz };
+  return { name, octave, cents, midi, targetHz };
 }
 
-export function detectPitch(buffer: Float32Array, sampleRate: number): number | null {
-  const SIZE = buffer.length;
-  let rms = 0;
-  for (let i = 0; i < SIZE; i++) {
-    const v = buffer[i] ?? 0;
-    rms += v * v;
-  }
-  rms = Math.sqrt(rms / SIZE);
-  if (rms < 0.01) return null;
+export interface PitchReading {
+  pitch: number;
+  clarity: number;
+}
 
-  const minFreq = 50;
-  const maxFreq = 1500;
-  const minLag = Math.floor(sampleRate / maxFreq);
-  const maxLag = Math.min(Math.floor(sampleRate / minFreq), Math.floor(SIZE / 2));
+export interface PitchEngine {
+  detect(buffer: Float32Array, sampleRate: number): PitchReading | null;
+}
 
-  const correlations = new Float32Array(maxLag + 1);
-  for (let lag = minLag; lag <= maxLag; lag++) {
-    let sum = 0;
-    for (let i = 0; i < maxLag; i++) {
-      sum += (buffer[i] ?? 0) * (buffer[i + lag] ?? 0);
-    }
-    correlations[lag] = sum;
-  }
+/**
+ * Cria um detector reutilizável para um tamanho de janela fixo (fftSize do
+ * AnalyserNode). O pitchy exige buffer sempre do mesmo tamanho.
+ */
+export function createPitchEngine(inputLength: number): PitchEngine {
+  const detector = PitchDetector.forFloat32Array(inputLength);
+  // ignora quadros abaixo desse volume (dB) direto no motor.
+  detector.minVolumeDecibels = -34;
 
-  let d = minLag;
-  while (d < maxLag - 1 && (correlations[d] ?? 0) > (correlations[d + 1] ?? 0)) d++;
-  let maxVal = -1;
-  let maxPos = -1;
-  for (let i = d; i <= maxLag; i++) {
-    const c = correlations[i] ?? 0;
-    if (c > maxVal) {
-      maxVal = c;
-      maxPos = i;
-    }
-  }
-  if (maxPos <= 0) return null;
-
-  if (maxPos > 0 && maxPos < maxLag) {
-    const x1 = maxPos - 1;
-    const x2 = maxPos;
-    const x3 = maxPos + 1;
-    const y1 = correlations[x1] ?? 0;
-    const y2 = correlations[x2] ?? 0;
-    const y3 = correlations[x3] ?? 0;
-    const denom = (x1 - x2) * (x1 - x3) * (x2 - x3);
-    if (denom !== 0) {
-      const a = (x3 * (y2 - y1) + x2 * (y1 - y3) + x1 * (y3 - y2)) / denom;
-      const b = (x3 * x3 * (y1 - y2) + x2 * x2 * (y3 - y1) + x1 * x1 * (y2 - y3)) / denom;
-      const peakX = -b / (2 * a);
-      if (peakX > 0 && peakX < maxLag) {
-        return sampleRate / peakX;
-      }
-    }
-  }
-
-  return sampleRate / maxPos;
+  return {
+    detect(buffer, sampleRate) {
+      const [pitch, clarity] = detector.findPitch(buffer, sampleRate);
+      if (!pitch || clarity < CLARITY_MIN) return null;
+      if (pitch < MIN_FREQ || pitch > MAX_FREQ) return null;
+      return { pitch, clarity };
+    },
+  };
 }

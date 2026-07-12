@@ -6,10 +6,13 @@ import { cn } from '@/lib/utils';
 import type { PartnerOutdoorCardProps } from '@/types/ads/partner-outdoor.types';
 
 /**
- * Card outdoor de parceiros: carousel automático data-driven (JSON).
- * Usado no hero da home e no footer (banner).
- * Pausado em hover/focus e com prefers-reduced-motion.
- * Não usar no meio da cifra.
+ * Card outdoor de parceiros: carousel automático data-driven.
+ * PORTA ÚNICA de publicidade do site (regra de produto NÃO NEGOCIÁVEL,
+ * SPEC_010 D-4): todo ad do Cifra Tom é este card slider (home, footer,
+ * flancos de página, aside da cifra, modal flash). NUNCA sobrepondo
+ * conteúdo, NUNCA dentro de menus e, na página de cifra, NUNCA em cima,
+ * no meio, embaixo ou sobre a cifra. Pausado em hover/focus e com
+ * prefers-reduced-motion.
  */
 export function PartnerOutdoorCard({ config, className }: PartnerOutdoorCardProps) {
   const { slides, copyright, intervalMs } = config;
