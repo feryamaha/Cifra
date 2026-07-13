@@ -5,6 +5,7 @@ import { songVersions, works } from '@/lib/db/schema';
 import { jsonNoStore } from '@/lib/security/http-headers';
 import { parseSongPayload } from '@/lib/security/song-schema';
 import { isAdminRequest, unauthorized } from '@/lib/server/require-admin';
+import { revalidateSongContent } from '@/lib/songs/revalidate';
 import type { Song } from '@/types/song/song.types';
 
 type Params = { params: Promise<{ slug: string }> };
@@ -109,6 +110,8 @@ export async function PUT(req: Request, { params }: Params): Promise<Response> {
       .where(eq(songVersions.id, existing.version.id));
   }
 
+  // ISR (SPEC_012 A4)
+  revalidateSongContent(slug);
   const updated = await findVersionBySlug(slug);
   return jsonNoStore({ song: updated ? toAdminSong(updated) : null });
 }
@@ -123,5 +126,7 @@ export async function DELETE(_req: Request, { params }: Params): Promise<Respons
   const existing = await findVersionBySlug(slugParsed.data);
   if (!existing) return jsonNoStore({ error: 'Música não encontrada.' }, { status: 404 });
   await db.delete(songVersions).where(eq(songVersions.id, existing.version.id));
+  // ISR (SPEC_012 A4)
+  revalidateSongContent(slugParsed.data);
   return jsonNoStore({ ok: true });
 }

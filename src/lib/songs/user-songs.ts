@@ -4,7 +4,8 @@
 
 import { isChordToken, normalizeChord } from '@/lib/parsers/chord-utils';
 import type { SongDraft } from '@/lib/parsers/types';
-import type { Song, UserSongInput } from '@/types/song/song.types';
+import type { Song, SongProgression, UserSongInput } from '@/types/song/song.types';
+import { detectChordSequences } from '@/utils/song-view.helpers';
 
 export const USER_SONGS_KEY = 'cifratom.user-songs.v1';
 const LEGACY_USER_SONGS_KEY = 'cifralab.user-songs.v1';
@@ -46,6 +47,40 @@ export function parseChordsText(text: string): string[] {
     .map((t) => normalizeChord(t));
 }
 
+/**
+ * Uma progressão por linha; acordes separados por espaço.
+ * Linhas vazias ou com menos de 2 acordes válidos são ignoradas.
+ */
+export function parseProgressionsText(text: string): SongProgression[] {
+  return text
+    .split(/\r?\n/)
+    .map((line) => parseChordsText(line))
+    .filter((chords) => chords.length >= 2)
+    .map((chords) => ({ chords }))
+    .slice(0, 20);
+}
+
+/** Serializa progressões para textarea (edição). */
+export function progressionsToText(list: SongProgression[] | undefined): string {
+  if (!list?.length) return '';
+  return list.map((p) => p.chords.join(' ')).join('\n');
+}
+
+/**
+ * SPEC_014 B1–B2: se progressions vazio/ausente, roda o algoritmo e grava no song.
+ * Se já preenchido, não sobrescreve (humano manda).
+ */
+export function applyAutoProgressionsIfEmpty(song: Song): Song {
+  const has = song.progressions?.some((p) => p.chords && p.chords.length >= 2);
+  if (has) return song;
+  const detected = detectChordSequences({ ...song, progressions: undefined });
+  if (detected.length === 0) return { ...song, progressions: undefined };
+  return {
+    ...song,
+    progressions: detected.map((d) => ({ chords: [...d.chords] })),
+  };
+}
+
 export function userSongFromInput(input: UserSongInput): Song {
   const id = newUserSongId();
   const chords = parseChordsText(input.chordsText);
@@ -81,12 +116,16 @@ export function userSongFromInput(input: UserSongInput): Song {
   };
 }
 
-export function userSongFromDraft(draft: SongDraft): Song {
+export function userSongFromDraft(
+  draft: SongDraft,
+  opts?: { progressions?: SongProgression[] },
+): Song {
   if (!draft.title.trim()) throw new Error('Informe o título.');
   if (draft.chords.length === 0) throw new Error('A música precisa ter pelo menos um acorde.');
 
   const id = newUserSongId();
   const key = draft.key || 'C';
+  const progressions = opts?.progressions?.filter((p) => p.chords.length >= 2);
 
   return {
     id,
@@ -113,6 +152,7 @@ export function userSongFromDraft(draft: SongDraft): Song {
       lines: s.lines,
     })),
     sourceText: draft.sourceText,
+    ...(progressions && progressions.length > 0 ? { progressions } : {}),
   };
 }
 

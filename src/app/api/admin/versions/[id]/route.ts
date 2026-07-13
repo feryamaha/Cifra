@@ -7,6 +7,7 @@ import { jsonNoStore } from '@/lib/security/http-headers';
 import { notifyUser } from '@/lib/security/notify-user';
 import { sanitizePlainText, stripHtml } from '@/lib/security/sanitize';
 import { isAdminRequest, unauthorized } from '@/lib/server/require-admin';
+import { revalidateSongContent } from '@/lib/songs/revalidate';
 
 const rejectSchema = z
   .object({
@@ -87,6 +88,8 @@ export async function POST(
       });
     }
 
+    // ISR (SPEC_012 A4): cifra aprovada aparece na hora
+    revalidateSongContent(version.slug);
     return jsonNoStore({ ok: true, version: { id: updated.id, status: updated.status } });
   }
 
@@ -131,5 +134,7 @@ export async function POST(
     });
   }
 
+  // ISR (SPEC_012 A4): rejeição também tira do ar imediatamente se estava pública
+  revalidateSongContent(version.slug);
   return jsonNoStore({ ok: true, version: { id: updated.id, status: updated.status } });
 }

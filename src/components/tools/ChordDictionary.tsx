@@ -1,14 +1,16 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { Chord, Note } from 'tonal';
 import { Card } from '@/components/ui/Card';
 import { ChordDiagram } from '@/components/ui/ChordDiagram';
 import chordDb from '@/data/chords/guitar-chords-db.json';
 import { TUNING_LIST, TUNINGS } from '@/data/music/tunings.data';
 import { chordPitchClasses, parseChord } from '@/lib/music/chords';
 import { mapRootToDbKey, mapSuffixToDb } from '@/lib/music/chords-db.adapter';
-import { findVoicings } from '@/lib/music/voicing';
-import type { Voicing } from '@/types/music/voicing.types';
+import { classifyVoicing, findVoicings, type VoicingClass } from '@/lib/music/voicing';
+import type { PitchClass } from '@/types/music/notes.types';
+import type { Voicing, VoicingTarget } from '@/types/music/voicing.types';
 
 interface DbPosition {
   frets: number[];
@@ -33,6 +35,7 @@ interface DisplayVoicing {
   voicing: Voicing;
   label: string;
   source: 'db' | 'engine';
+  klass: VoicingClass;
 }
 
 /**
@@ -73,16 +76,47 @@ function searchChordDb(query: string): Voicing[] {
   return match.positions.map(dbPositionToVoicing);
 }
 
-function searchEngine(query: string, tuningId: string, limit: number): Voicing[] {
-  const parsed = parseChord(query.trim());
-  if (!parsed) return [];
+/**
+ * Fallback para acordes SOFISTICADOS via tonal (MIT): maj13, 7(b9), 6/9,
+ * 13(#11), m11, 7alt etc. Cobre o que o parser BR nativo não conhece; o
+ * shape continua 100% calculado pelo nosso motor, em qualquer afinação.
+ */
+function targetFromTonal(symbol: string): VoicingTarget | null {
+  const m = symbol.trim().match(/^([A-G](?:#|b)?)(.*?)(?:\/([A-G](?:#|b)?))?$/);
+  if (!m) return null;
+  const [, root, sufRaw, bass] = m;
+  const attempts = [
+    root + mapSuffixToDb(sufRaw ?? ''),
+    root + (sufRaw ?? '').replace(/[()]/g, ''),
+    symbol.trim(),
+  ];
+  let chord = Chord.get(attempts[0]);
+  for (let i = 1; chord.empty && i < attempts.length; i++) chord = Chord.get(attempts[i]);
+  if (chord.empty || chord.notes.length < 3) return null;
 
+  const pcs = [
+    ...new Set(
+      chord.notes.map((n) => Note.chroma(n)).filter((x): x is number => typeof x === 'number'),
+    ),
+  ] as PitchClass[];
+  const rootPc = Note.chroma(root);
+  if (typeof rootPc !== 'number') return null;
+  const bassChroma = bass ? Note.chroma(bass) : rootPc;
+  const bassPc = (typeof bassChroma === 'number' ? bassChroma : rootPc) as PitchClass;
+  if (!pcs.includes(bassPc)) pcs.push(bassPc);
+  return { pcs, required: [rootPc as PitchClass], bassPc };
+}
+
+function searchEngine(query: string, tuningId: string, limit: number): Voicing[] {
   const tuning = TUNINGS[tuningId] ?? TUNINGS.standard;
-  const target = chordPitchClasses(parsed);
+  const parsed = parseChord(query.trim());
+  const target = parsed ? chordPitchClasses(parsed) : targetFromTonal(query);
+  if (!target || target.pcs.length < 2) return [];
   return findVoicings(tuning.strings, target, limit);
 }
 
-const MAX_VARIATIONS = 16;
+// Mais variações por acorde (pedido do Fernando): 24 posições por busca.
+const MAX_VARIATIONS = 24;
 
 /**
  * Banco (shapes consagrados, com dedilhado revisado) + motor dinâmico
@@ -93,21 +127,28 @@ function searchAllVariations(query: string, tuningId: string): DisplayVoicing[] 
   const fromEngine = searchEngine(query, tuningId, MAX_VARIATIONS);
 
   const seen = new Set<string>();
-  const merged: DisplayVoicing[] = [];
+  const merged: Omit<DisplayVoicing, 'label'>[] = [];
   for (const v of fromDb) {
     const key = fretsKey(v.frets);
     if (seen.has(key)) continue;
     seen.add(key);
-    merged.push({ voicing: v, label: `Posição ${merged.length + 1}`, source: 'db' });
+    merged.push({ voicing: v, source: 'db', klass: classifyVoicing(v) });
   }
   for (const v of fromEngine) {
     if (merged.length >= MAX_VARIATIONS) break;
     const key = fretsKey(v.frets);
     if (seen.has(key)) continue;
     seen.add(key);
-    merged.push({ voicing: v, label: `Posição ${merged.length + 1}`, source: 'engine' });
+    merged.push({ voicing: v, source: 'engine', klass: classifyVoicing(v) });
   }
-  return merged;
+
+  // SPEC_012 B2: ordena como músico estuda (abertos, pestanas, fechados;
+  // dentro do grupo, da casa mais baixa para a mais alta)
+  const rank: Record<VoicingClass['kind'], number> = { aberta: 0, pestana: 1, fechada: 2 };
+  merged.sort(
+    (a, b) => rank[a.klass.kind] - rank[b.klass.kind] || a.klass.baseFret - b.klass.baseFret,
+  );
+  return merged.map((m, i) => ({ ...m, label: `Posição ${i + 1}` }));
 }
 
 export function ChordDictionary() {
@@ -131,7 +172,7 @@ export function ChordDictionary() {
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Ex: C, Dm, F7M, Bm7(b5), G/B"
+          placeholder="Ex: C, Dm7, F7M, C6/9, C13(#11), Bm7(b5), G/B"
           className="w-full rounded-lg border border-stroke-200 bg-secondary-900 px-3 py-2.5 font-mono text-sm outline-none focus:border-primary-500"
         />
       </label>
@@ -165,15 +206,12 @@ export function ChordDictionary() {
         <>
           <p className="text-xs text-neutral-500">
             {results.length} {results.length > 1 ? 'variações encontradas' : 'variação encontrada'}
-            {results.some((r) => r.source === 'db') && results.some((r) => r.source === 'engine')
-              ? ' (shapes consagrados + variações calculadas para explorar o braço)'
-              : ''}
           </p>
           <div className="grid grid-cols-2 gap-4 @tablet:grid-cols-3 @Desktop:grid-cols-4">
             {results.map((r, i) => (
               <div
                 key={`${r.label}-${i}`}
-                className={`flex flex-col items-center gap-2 ${lefty ? 'scale-x-[-1]' : ''}`}
+                className={`flex flex-col items-center gap-1.5 ${lefty ? 'scale-x-[-1]' : ''}`}
               >
                 <span
                   className={`font-chakra text-xs text-neutral-500 ${lefty ? 'scale-x-[-1]' : ''}`}

@@ -6,7 +6,15 @@ import { areAdsEnabled } from '@/lib/ads/ads-enabled';
 import { getSiteUrl } from '@/lib/site-url';
 import { getUnifiedSongBySlug } from '@/lib/songs/server-catalog';
 
-export const dynamic = 'force-dynamic';
+// ISR (SPEC_012 A1): página de cifra cacheada por 300s por slug + revalidação
+// sob demanda quando o admin publica/edita/remove (revalidateSongContent).
+// generateStaticParams vazio é o que LIGA o cache on-demand em rota dinâmica:
+// sem ele o Next trata a rota como 100% dinâmica e ignora o revalidate.
+export const revalidate = 300;
+
+export function generateStaticParams(): { slug: string }[] {
+  return [];
+}
 
 /** Dedupe entre generateMetadata e a página (mesmo request). */
 const getSong = cache(async (slug: string) => getUnifiedSongBySlug(slug, { admin: false }));

@@ -37,6 +37,8 @@ export interface ChordSequence {
   name: string;
   chords: string[];
   sections: string[];
+  /** SPEC_012 C1: quantas vezes o padrão é tocado na música inteira */
+  occurrences: number;
 }
 
 export interface SongViewModel {

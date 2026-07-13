@@ -1,10 +1,17 @@
+import type { NextConfig } from 'next';
+
 /**
  * Headers de segurança (OWASP Secure Headers).
  * CSP: em produção evita unsafe-eval; worker PDF self-host em /pdf.worker.min.mjs
  * (sem unpkg). style-src/script-src 'unsafe-inline' exigidos pelo Next/Tailwind
- * sem pipeline de nonces (residual de framework documentado).
+ * sem pipeline de nonces (residual de framework documentado; nonce é o item
+ * E1 pendente da SPEC_010).
  *
  * Cache-Control no-store em rotas com dados de conta/admin (R32 / CWE-525).
+ *
+ * Migrado de next.config.mjs para TypeScript (ordem do Fernando, 2026-07-12):
+ * todo o repo é TS; só ficam em JS os artefatos que a plataforma exige
+ * (public/sw.js, public/pdf.worker.min.mjs, postcss.config.mjs).
  */
 
 const isProd = process.env.NODE_ENV === 'production';
@@ -53,8 +60,7 @@ const noStoreHeaders = [
   { key: 'Pragma', value: 'no-cache' },
 ];
 
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   async headers() {

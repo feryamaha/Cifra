@@ -6,8 +6,9 @@ import { areAdsEnabled } from '@/lib/ads/ads-enabled';
 import { getPartnerOutdoor } from '@/lib/ads/partner-outdoor';
 import { getUnifiedCatalog } from '@/lib/songs/server-catalog';
 
-// catálogo: demos + versões published no Postgres
-export const dynamic = 'force-dynamic';
+// Catálogo no Neon com ISR (SPEC_012 A2): cache de 120s + revalidação
+// sob demanda a cada mutação do admin (revalidateSongContent).
+export const revalidate = 120;
 
 export default async function HomePage() {
   const songs = await getUnifiedCatalog({ admin: false });

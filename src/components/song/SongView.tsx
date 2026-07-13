@@ -6,6 +6,8 @@
  * Aqui é APENAS JSX, conforme a regra de criação de componentes.
  */
 
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { useEffect, useRef, useState } from 'react';
 import { PartnerOutdoorCard } from '@/components/ads/PartnerOutdoorCard';
 import { AUTO_SCROLL_OPTIONS } from '@/data/song-view/auto-scroll.data';
@@ -23,6 +25,8 @@ import { SongMap } from './SongMap';
 
 export function SongView({ song, adsOn = false }: SongViewProps) {
   const view = useSongView(song);
+  const { data: session, status: sessionStatus } = useSession();
+  const router = useRouter();
   const [controlsOpen, setControlsOpen] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -50,6 +54,17 @@ export function SongView({ song, adsOn = false }: SongViewProps) {
     } catch {
       window.prompt('Copie o link:', url);
     }
+  };
+
+  /** User logado → edição; senão → login e volta para editar esta cifra. Admin publica pelo painel. */
+  const onEdit = () => {
+    const editPath = `/adicionar?editarSlug=${encodeURIComponent(song.slug)}`;
+    if (sessionStatus === 'loading') return;
+    if (!session?.user) {
+      router.push(`/entrar?como=user&callbackUrl=${encodeURIComponent(editPath)}`);
+      return;
+    }
+    router.push(editPath);
   };
 
   const iconBtn =
@@ -202,6 +217,27 @@ export function SongView({ song, adsOn = false }: SongViewProps) {
                 <circle cx="18" cy="19" r="3" />
                 <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
                 <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={onEdit}
+              aria-label="Editar cifra"
+              title="Editar cifra, letra e progressões (requer login)"
+              className={iconBtn}
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
               </svg>
             </button>
             {/* Auto-rolagem: controle composto Off / Low / Mid / High */}

@@ -15,7 +15,11 @@ import {
   metaFromFileName,
   parseChartToDraft,
 } from '@/lib/parsers';
-import { userSongFromDraft } from '@/lib/songs/user-songs';
+import {
+  applyAutoProgressionsIfEmpty,
+  parseProgressionsText,
+  userSongFromDraft,
+} from '@/lib/songs/user-songs';
 import type { Song } from '@/types/song/song.types';
 
 const MAX_ITEMS = 20;
@@ -30,6 +34,8 @@ interface Row {
   parseError: string | null;
   /** texto bruto extraído: permite editar e reprocessar antes de publicar */
   raw: string | null;
+  /** uma progressão por linha (opcional) */
+  progressionsText?: string;
   editing?: boolean;
   sent?: { ok: boolean; slug?: string; error?: string };
 }
@@ -87,7 +93,7 @@ export function AdminBulkImport() {
           title: base.title,
           artist: base.artist || undefined,
         });
-        const song = userSongFromDraft(draft);
+        const song = userSongFromDraft(draft, {});
         if (!song.chords || song.chords.length === 0) {
           next.push({
             ...base,
@@ -136,7 +142,10 @@ export function AdminBulkImport() {
             title: r.title,
             artist: r.artist || undefined,
           });
-          const song = userSongFromDraft(draft);
+          const progs = parseProgressionsText(r.progressionsText ?? '');
+          const song = userSongFromDraft(draft, {
+            progressions: progs.length > 0 ? progs : undefined,
+          });
           if (!song.chords || song.chords.length === 0) {
             return {
               ...r,
@@ -174,11 +183,24 @@ export function AdminBulkImport() {
     setBusy(true);
     setSummary('');
     try {
-      const items = validRows.map((r) => ({
-        artist: r.artist.trim(),
-        title: r.title.trim(),
-        song: { ...(r.song as Song), title: r.title.trim(), artist: r.artist.trim() },
-      }));
+      const items = validRows.map((r) => {
+        const progs = parseProgressionsText(r.progressionsText ?? '');
+        const base = r.song as Song;
+        let song: Song = {
+          ...base,
+          title: r.title.trim(),
+          artist: r.artist.trim(),
+          progressions: progs.length > 0 ? progs : undefined,
+        };
+        if (progs.length === 0) {
+          song = applyAutoProgressionsIfEmpty({ ...song, progressions: undefined });
+        }
+        return {
+          artist: r.artist.trim(),
+          title: r.title.trim(),
+          song,
+        };
+      });
       const res = await fetch('/api/admin/songs/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -293,7 +315,7 @@ export function AdminBulkImport() {
                   </tr>
                   {r.editing && r.raw !== null && (
                     <tr className="border-b border-stroke-100 bg-secondary-900/40">
-                      <td colSpan={5} className="px-2 py-3">
+                      <td colSpan={5} className="space-y-2 px-2 py-3">
                         <textarea
                           value={r.raw}
                           onChange={(e) => setRow(i, { raw: e.target.value })}
@@ -301,10 +323,23 @@ export function AdminBulkImport() {
                           aria-label={`Cifra de ${r.fileName}`}
                           className="w-full rounded-lg border border-stroke-200 bg-secondary-950 p-3 font-mono text-xs leading-relaxed"
                         />
+                        <label className="block space-y-1">
+                          <span className="font-mono text-[10px] uppercase tracking-wider text-neutral-500">
+                            Progressões (opcional, uma por linha)
+                          </span>
+                          <textarea
+                            value={r.progressionsText ?? ''}
+                            onChange={(e) => setRow(i, { progressionsText: e.target.value })}
+                            rows={3}
+                            aria-label={`Progressões de ${r.fileName}`}
+                            placeholder={'C G Am F\nAm F C G'}
+                            className="w-full rounded-lg border border-stroke-200 bg-secondary-950 p-2 font-mono text-xs"
+                          />
+                        </label>
                         <button
                           type="button"
                           onClick={() => reprocess(i)}
-                          className="mt-2 rounded-lg border border-primary-600 bg-primary-400 px-4 py-1.5 text-xs font-semibold text-secondary-950 hover:bg-primary-300"
+                          className="rounded-lg border border-primary-600 bg-primary-400 px-4 py-1.5 text-xs font-semibold text-secondary-950 hover:bg-primary-300"
                         >
                           Reprocessar cifra
                         </button>

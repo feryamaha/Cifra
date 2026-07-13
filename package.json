@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "test:engine": "tsx scripts/test-engine.ts",
     "test:parsers": "tsx scripts/test-parsers.ts",
+    "test:progressions": "tsx scripts/test-progressions.ts",
     "test:e2e": "playwright test",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
@@ -31,6 +32,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "tailwind-merge": "^3.4.0",
+    "tonal": "^6.4.3",
     "zod": "^4.4.3"
   },
   "devDependencies": {

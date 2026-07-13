@@ -24,7 +24,14 @@ export function ChordSequencesPanel({ view }: SongControlsProps) {
       <div className="space-y-0.5">
         <ControlLabel>Progressões de acordes</ControlLabel>
         <p className="text-[11px] text-neutral-500">
-          Padrões que se repetem na música (ciclo harmônico por seção).
+          Progressões da forma (contagem global). No envio: campo vazio gera automático; se
+          preenchido, grava o seu. Sempre editáveis depois (user/admin).
+        </p>
+        {/* SPEC_012 C3: resumo p/ memorização (troque a notação p/ números) */}
+        <p className="pt-1 font-mono text-[11px] text-primary-400">
+          {view.uniqueChords.length} acorde{view.uniqueChords.length === 1 ? '' : 's'} único
+          {view.uniqueChords.length === 1 ? '' : 's'} · {view.chordSequences.length} progress
+          {view.chordSequences.length === 1 ? 'ão' : 'ões'}
         </p>
       </div>
       {view.chordSequences.map((seq) => (
@@ -33,7 +40,17 @@ export function ChordSequencesPanel({ view }: SongControlsProps) {
           className="rounded-lg border border-stroke-100 bg-secondary-900/50 p-3 transition-colors hover:border-stroke-200"
         >
           <div className="mb-2 flex items-center justify-between gap-2">
-            <span className="font-chakra text-xs font-semibold text-primary-300">{seq.name}</span>
+            <span className="flex min-w-0 items-center gap-2">
+              <span className="truncate font-chakra text-xs font-semibold text-primary-300">
+                {seq.name}
+              </span>
+              <span
+                className="shrink-0 rounded-full border border-primary-800 bg-primary-950 px-1.5 py-0.5 font-mono text-[10px] font-bold text-primary-300"
+                title={`Tocada ${seq.occurrences}x na música`}
+              >
+                ×{seq.occurrences}
+              </span>
+            </span>
             <span className="truncate text-[10px] text-neutral-500">
               {seq.sections.join(' · ')}
             </span>

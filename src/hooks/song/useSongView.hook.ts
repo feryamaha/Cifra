@@ -96,7 +96,7 @@ export function useSongView(song: Song): SongViewModel {
   );
   const resolveVoicings = useCallback(
     (originalSymbol: string) =>
-      resolveChordVoicings(originalSymbol, originalKeyPc, opts, tuning, 10),
+      resolveChordVoicings(originalSymbol, originalKeyPc, opts, tuning, 12),
     [originalKeyPc, opts, tuning],
   );
   const selectedVoicing = useMemo(

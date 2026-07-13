@@ -226,3 +226,39 @@ export function clearVoicingCache(): void {
   cache.clear();
   multiCache.clear();
 }
+
+// ---------- classificação de shapes (SPEC_012 B1) ----------
+
+export type VoicingKind = 'aberta' | 'pestana' | 'fechada';
+
+export interface VoicingClass {
+  kind: VoicingKind;
+  /** menor traste usado (0 = só soltas) — "casa" da posição */
+  baseFret: number;
+}
+
+/**
+ * Classifica como o músico pensa: ABERTA usa corda solta (básicos de
+ * primeira posição), PESTANA tem barre, FECHADA é shape móvel sem soltas
+ * (região do braço). Base para ordenar/agrupar dicionário e hover.
+ */
+export function classifyVoicing(v: Voicing): VoicingClass {
+  const fretted = v.frets.filter((f): f is number => f !== null && f > 0);
+  const baseFret = fretted.length > 0 ? Math.min(...fretted) : 0;
+  if (v.barre !== null && v.barre > 0) return { kind: 'pestana', baseFret: v.barre };
+  const hasOpen = v.frets.some((f) => f === 0);
+  return { kind: hasOpen ? 'aberta' : 'fechada', baseFret };
+}
+
+export const VOICING_KIND_LABELS: Record<VoicingKind, string> = {
+  aberta: 'Aberta',
+  pestana: 'Pestana',
+  fechada: 'Fechada',
+};
+
+/** Abreviação para rótulos compactos (hover): A, P3, F5... */
+export function voicingKindAbbr(c: VoicingClass): string {
+  if (c.kind === 'aberta') return 'A';
+  const casa = c.baseFret > 1 ? String(c.baseFret) : '';
+  return (c.kind === 'pestana' ? 'P' : 'F') + casa;
+}

@@ -34,6 +34,12 @@ export interface SongSection {
 
 export type SongSource = 'demo' | 'harpa' | 'cantor' | 'user';
 
+/** Progressão informada pelo autor (fonte de verdade; ISSUE_007 / SPEC_013). */
+export interface SongProgression {
+  /** Acordes como escritos (enfeites da 1ª vez: B11, A/E). */
+  chords: string[];
+}
+
 export interface Song {
   id: string;
   slug: string;
@@ -63,6 +69,11 @@ export interface Song {
   videoUrl?: string;
   /** dificuldade opcional para filtros (A6) */
   difficulty?: 'iniciante' | 'intermediario' | 'avancado';
+  /**
+   * Progressões manuais (opcional). Se presente e não vazio, o painel usa
+   * só estas; detecção automática é fallback (SPEC_013 A).
+   */
+  progressions?: SongProgression[];
 }
 
 /** Payload do formulário de adição manual */

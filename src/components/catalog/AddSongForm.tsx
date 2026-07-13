@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChartPreview, ChordsOnlyPreview } from '@/components/catalog/ChartPreview';
 import { SubmitResultModal } from '@/components/catalog/SubmitResultModal';
@@ -17,8 +18,11 @@ import {
   type SongDraft,
 } from '@/lib/parsers';
 import {
+  applyAutoProgressionsIfEmpty,
   getUserSongBySlug,
   parseChordsText,
+  parseProgressionsText,
+  progressionsToText,
   songToChartText,
   userSongFromDraft,
   userSongFromInput,
@@ -51,12 +55,27 @@ texto do refrão
 
 export function AddSongForm() {
   const router = useRouter();
+  const { data: session, status: sessionStatus } = useSession();
   const searchParams = useSearchParams();
   const editSlug = searchParams.get('editar');
+  /** Cifra publicada (toolbar Editar): /adicionar?editarSlug=... */
+  const editPublishedSlug = searchParams.get('editarSlug');
   const editVersionId = searchParams.get('editarVersao');
   const [editing, setEditing] = useState<Song | null>(null);
   const [editingVersionId, setEditingVersionId] = useState<string | null>(null);
+  /** Edição colaborativa de cifra já publicada (sempre new_version → revisão). */
+  const [editingPublished, setEditingPublished] = useState(false);
   const loadedEditRef = useRef<string | null>(null);
+
+  // Editar cifra publicada exige login (toolbar Editar / URL direta)
+  useEffect(() => {
+    if (!editPublishedSlug || sessionStatus === 'loading') return;
+    if (!session?.user) {
+      router.replace(
+        `/entrar?como=user&callbackUrl=${encodeURIComponent(`/adicionar?editarSlug=${editPublishedSlug}`)}`,
+      );
+    }
+  }, [editPublishedSlug, session, sessionStatus, router]);
   const [tab, setTab] = useState<Tab>('paste');
 
   const [title, setTitle] = useState('');
@@ -66,6 +85,8 @@ export function AddSongForm() {
   const [tuning, setTuning] = useState('standard');
   const [bpm, setBpm] = useState<number | undefined>();
   const [chordsText, setChordsText] = useState('C G Am F');
+  /** Uma progressão por linha (opcional; fonte de verdade no painel). */
+  const [progressionsText, setProgressionsText] = useState('');
 
   const [rawText, setRawText] = useState('');
   const [fileName, setFileName] = useState('');
@@ -143,6 +164,7 @@ export function AddSongForm() {
       if (song.bpm != null && song.bpm > 0) setBpm(song.bpm);
       const text = song.sourceText || songToChartText(song);
       setRawText(text);
+      setProgressionsText(progressionsToText(song.progressions));
       setTab('paste');
       applyParse(text, {
         title: v.workTitle || song.title,
@@ -153,9 +175,51 @@ export function AddSongForm() {
     })();
   }, [editVersionId, applyParse]);
 
+  // Edição de cifra publicada (botão Editar na toolbar): carrega payload público
+  useEffect(() => {
+    if (!editPublishedSlug || editVersionId) return;
+    if (sessionStatus !== 'authenticated' || !session?.user) return;
+    if (loadedEditRef.current === `pub:${editPublishedSlug}`) return;
+    loadedEditRef.current = `pub:${editPublishedSlug}`;
+    (async () => {
+      const res = await fetch(`/api/songs/${encodeURIComponent(editPublishedSlug)}`);
+      if (!res.ok) {
+        setError('Cifra não encontrada para edição.');
+        return;
+      }
+      const data = (await res.json()) as { song?: Song };
+      const song = data.song;
+      if (!song) {
+        setError('Cifra não encontrada para edição.');
+        return;
+      }
+      setEditingPublished(true);
+      setEditingVersionId(null); // nunca edit_own: sempre nova versão para o admin
+      setEditing(song);
+      setTitle(song.title);
+      setArtist(song.artist);
+      setGenre(song.genre || 'Cifras');
+      setKey(song.key || song.originalKey || 'C');
+      setTuning(song.tuning || 'standard');
+      if (song.bpm != null && song.bpm > 0) setBpm(song.bpm);
+      else setBpm(undefined);
+      const text = song.sourceText || songToChartText(song);
+      setRawText(text);
+      setProgressionsText(progressionsToText(song.progressions));
+      setTab('paste');
+      applyParse(text, {
+        title: song.title,
+        artist: song.artist,
+        key: song.key,
+        bpm: song.bpm,
+      });
+    })();
+  }, [editPublishedSlug, editVersionId, applyParse, session, sessionStatus]);
+
   // Legado: /adicionar?editar=<slug> localStorage
   useEffect(() => {
-    if (!editSlug || editVersionId || loadedEditRef.current === editSlug) return;
+    if (!editSlug || editVersionId || editPublishedSlug) return;
+    if (loadedEditRef.current === editSlug) return;
     loadedEditRef.current = editSlug;
     const song = getUserSongBySlug(editSlug);
     if (!song) {
@@ -172,9 +236,10 @@ export function AddSongForm() {
     else setBpm(undefined);
     const text = song.sourceText || songToChartText(song);
     setRawText(text);
+    setProgressionsText(progressionsToText(song.progressions));
     setTab('paste');
     applyParse(text, { title: song.title, artist: song.artist, key: song.key, bpm: song.bpm });
-  }, [editSlug, editVersionId, applyParse]);
+  }, [editSlug, editVersionId, editPublishedSlug, applyParse]);
 
   const onFile = async (file: File | null) => {
     if (!file) return;
@@ -221,11 +286,14 @@ export function AddSongForm() {
       artist: artist.trim() || song.artist || 'Desconhecido',
     };
 
+    // Edição de cifra publicada: sempre new_version (usuário nunca publica).
+    // edit_own só para reenvio da própria versão pendente (Meus envios).
+    const useEditOwn = Boolean(editingVersionId) && !editingPublished;
     const res = await fetch('/api/versions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(
-        editingVersionId
+        useEditOwn
           ? {
               artist: payload.artist,
               title: payload.title,
@@ -238,12 +306,17 @@ export function AddSongForm() {
               title: payload.title,
               song: payload,
               intent: 'new_version',
+              label: editingPublished ? 'correção colaborativa' : undefined,
             },
       ),
     });
 
     if (res.status === 401) {
-      router.push(`/entrar?como=user&callbackUrl=${encodeURIComponent('/adicionar')}`);
+      const back =
+        editPublishedSlug != null
+          ? `/adicionar?editarSlug=${encodeURIComponent(editPublishedSlug)}`
+          : '/adicionar';
+      router.push(`/entrar?como=user&callbackUrl=${encodeURIComponent(back)}`);
       return false;
     }
 
@@ -262,7 +335,9 @@ export function AddSongForm() {
     setResultOk(true);
     setResultMsg(
       data?.message ??
-        'Cifra enviada para revisão do admin. Ela NÃO aparece no catálogo até ser aprovada.',
+        (editingPublished
+          ? 'Edição enviada para o admin revisar. A cifra pública só muda depois da aprovação e republicação.'
+          : 'Cifra enviada para revisão do admin. Ela NÃO aparece no catálogo até ser aprovada.'),
     );
     setResultOpen(true);
     return true;
@@ -285,7 +360,10 @@ export function AddSongForm() {
     setBusy(true);
     try {
       // só monta o objeto em memória — não persiste no catálogo local
-      const song = userSongFromInput({ title, artist, genre, key, tuning, chordsText });
+      let song = userSongFromInput({ title, artist, genre, key, tuning, chordsText });
+      const progs = parseProgressionsText(progressionsText);
+      if (progs.length > 0) song = { ...song, progressions: progs };
+      else song = applyAutoProgressionsIfEmpty(song);
       await submitForReview(song);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao enviar.');
@@ -316,7 +394,11 @@ export function AddSongForm() {
     setBusy(true);
     try {
       // só monta o objeto em memória — fila pending_review no servidor
-      const song = userSongFromDraft(merged);
+      const progs = parseProgressionsText(progressionsText);
+      let song = userSongFromDraft(merged, {
+        progressions: progs.length > 0 ? progs : undefined,
+      });
+      if (progs.length === 0) song = applyAutoProgressionsIfEmpty(song);
       await submitForReview(song);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao enviar.');
@@ -334,7 +416,14 @@ export function AddSongForm() {
         onClose={() => setResultOpen(false)}
       />
       <div className="space-y-4">
-        {editing && (
+        {editingPublished && editing && (
+          <p className="rounded-lg border border-primary-600 bg-primary-950/40 px-3 py-2 text-sm text-primary-300">
+            Editando a cifra publicada <strong>{editing.title}</strong> (letra, acordes e
+            progressões). Ao enviar, a alteração vai para o <strong>admin revisar</strong> — você
+            não publica direto. Só após aprovação a versão pública é atualizada.
+          </p>
+        )}
+        {editing && !editingPublished && (
           <p className="rounded-lg border border-primary-600 bg-primary-950/40 px-3 py-2 text-sm text-primary-300">
             Editando <strong>{editing.title}</strong>: ao salvar, a cifra atual é substituída.
           </p>
@@ -565,6 +654,23 @@ export function AddSongForm() {
             </button>
           </Card>
         )}
+
+        <Card className="space-y-2">
+          <p className="font-mono text-[10px] uppercase tracking-wider text-neutral-500">
+            Progressões que se repetem (opcional)
+          </p>
+          <p className="text-[11px] text-neutral-500">
+            Uma progressão por linha; acordes separados por espaço. Se preencher, o painel da cifra
+            usa isto em vez da detecção automática.
+          </p>
+          <textarea
+            value={progressionsText}
+            onChange={(e) => setProgressionsText(e.target.value)}
+            rows={4}
+            className={inputClass}
+            placeholder={'C G Am F\nAm F C G\nF G C'}
+          />
+        </Card>
 
         {error && (
           <p className="rounded-lg border border-auxiliary-danger-border bg-auxiliary-danger-background px-3 py-2 text-sm text-auxiliary-danger-default">

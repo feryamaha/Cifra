@@ -7,6 +7,7 @@ import { clientKey, RATE, rateLimitCheck } from '@/lib/security/rate-limit';
 import { parseSongPayload } from '@/lib/security/song-schema';
 import { isAdminRequest, unauthorized } from '@/lib/server/require-admin';
 import { normalizeText, versionSlug, workSlug } from '@/lib/songs/normalize';
+import { revalidateSongContent } from '@/lib/songs/revalidate';
 
 /**
  * Importação em lote (SPEC_010 B1/B4/E3): SOMENTE admin.
@@ -148,5 +149,9 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   const okCount = results.filter((r) => r.ok).length;
+  // ISR (SPEC_012 A4): público vê as cifras importadas imediatamente
+  if (okCount > 0) {
+    for (const r of results) if (r.ok && r.slug) revalidateSongContent(r.slug);
+  }
   return jsonNoStore({ results, okCount, failCount: results.length - okCount });
 }

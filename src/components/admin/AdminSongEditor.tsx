@@ -6,7 +6,13 @@ import { ChartPreview } from '@/components/catalog/ChartPreview';
 import { Card } from '@/components/ui/Card';
 import { TUNING_LIST } from '@/data/music/tunings.data';
 import { hasChords, parseChartToDraft } from '@/lib/parsers';
-import { songToChartText, userSongFromDraft } from '@/lib/songs/user-songs';
+import {
+  applyAutoProgressionsIfEmpty,
+  parseProgressionsText,
+  progressionsToText,
+  songToChartText,
+  userSongFromDraft,
+} from '@/lib/songs/user-songs';
 import type { Song } from '@/types/song/song.types';
 
 const KEYS = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
@@ -24,6 +30,9 @@ export function AdminSongEditor({ song }: { song: Song }) {
   const [tuning, setTuning] = useState(song.tuning);
   const [bpm, setBpm] = useState<number | undefined>(song.bpm);
   const [text, setText] = useState(() => song.sourceText || songToChartText(song));
+  const [progressionsText, setProgressionsText] = useState(() =>
+    progressionsToText(song.progressions),
+  );
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -46,14 +55,21 @@ export function AdminSongEditor({ song }: { song: Song }) {
     }
     setBusy(true);
     try {
-      const fresh = userSongFromDraft(draft);
-      const updated: Song = {
+      const progs = parseProgressionsText(progressionsText);
+      const fresh = userSongFromDraft(draft, {
+        progressions: progs.length > 0 ? progs : undefined,
+      });
+      let updated: Song = {
         ...fresh,
         id: song.id,
         slug: song.slug,
         source: song.source,
         published: song.published,
+        progressions: progs.length > 0 ? progs : undefined,
       };
+      if (progs.length === 0) {
+        updated = applyAutoProgressionsIfEmpty({ ...updated, progressions: undefined });
+      }
       const res = await fetch(`/api/admin/songs/${encodeURIComponent(song.slug)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -135,6 +151,23 @@ export function AdminSongEditor({ song }: { song: Song }) {
             rows={22}
             spellCheck={false}
             className={`${input} font-mono text-xs leading-relaxed`}
+          />
+        </Card>
+
+        <Card className="space-y-2">
+          <p className="font-mono text-[10px] uppercase tracking-wider text-neutral-500">
+            Progressões que se repetem (opcional)
+          </p>
+          <p className="text-[11px] text-neutral-500">
+            Uma por linha. Fonte de verdade no painel da cifra se preenchido.
+          </p>
+          <textarea
+            value={progressionsText}
+            onChange={(e) => setProgressionsText(e.target.value)}
+            rows={5}
+            spellCheck={false}
+            className={`${input} font-mono text-xs leading-relaxed`}
+            placeholder={'C G Am F\nAm F C G\nF G C'}
           />
           {error && (
             <p className="rounded-lg border border-auxiliary-danger-border bg-auxiliary-danger-background px-3 py-2 text-sm text-auxiliary-danger-default">

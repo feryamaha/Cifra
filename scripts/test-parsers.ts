@@ -156,42 +156,35 @@ check(
   bo.sections.some((s) => s.name === 'Rfráo Final' && s.type === 'ending'),
 );
 
-// sequências: compressão de ciclos e dedupe
+// sequências: mineração de padrões repetidos (SPEC_012 C, contrato novo:
+// dinâmico por música, nomes sequenciais, ordenado por repetições reais)
 const boSong = userSongFromDraft(chartToSongDraft(bo, { title: 'Gratidão', artist: 'Bruna Olly' }));
 const seqs = detectChordSequences(boSong);
-const interludeSeq = seqs.find((s) => s.sections.some((t) => /Inst/i.test(t)));
+check('bruna: detectou progressões', seqs.length >= 3 && seqs.length <= 8, String(seqs.length));
 check(
-  'bruna: interlúdio comprimido para 1 ciclo (A9 C#m B)',
-  interludeSeq?.chords.join(' ') === 'A9 C#m B',
-  interludeSeq?.chords.join(' '),
+  'bruna: nomes sequenciais Progressão 1..N (sem "principal")',
+  seqs.every((s, i) => s.name === `Progressão ${i + 1}`),
+  seqs.map((s) => s.name).join(' | '),
 );
 check(
-  'bruna: intro e versos compartilham a mesma sequência',
-  seqs.some((s) => s.chords.join(' ') === 'E C#m B11 A9' && s.sections.length >= 3),
-  seqs.map((s) => `${s.name}: ${s.chords.join(' ')} [${s.sections.join(',')}]`).join('\n'),
+  'bruna: ordenado por repetições (desc)',
+  seqs.every((s, i) => i === 0 || s.occurrences <= seqs[i - 1].occurrences),
+  seqs.map((s) => `×${s.occurrences}`).join(' '),
+);
+check(
+  'bruna: a mais repetida toca 2+ vezes e tem contagem alta',
+  (seqs[0]?.occurrences ?? 0) >= 4,
+  String(seqs[0]?.occurrences),
 );
 check('bruna: sem sequências duplicadas', new Set(seqs.map((s) => s.chords.join('|'))).size === seqs.length);
-check('bruna: 6 sequências lógicas', seqs.length === 6, String(seqs.length));
 check(
-  'bruna: refrões 1 e 2 agrupados (B11 ≈ B)',
-  seqs.some(
-    (s) =>
-      s.chords.join(' ') === 'E B11 A9 C#m B11' &&
-      s.sections.includes('R1') &&
-      s.sections.includes('R2'),
-  ),
-  seqs.map((s) => `${s.chords.join(' ')} [${s.sections.join(',')}]`).join('\n'),
+  'bruna: toda progressão tem 2+ acordes, contagem >= 1 e seção de origem',
+  seqs.every((s) => s.chords.length >= 2 && s.occurrences >= 1 && s.sections.length >= 1),
 );
 check(
   'bruna: refrão final + pós-refrão + final agrupados',
-  seqs.some(
-    (s) => s.chords.join(' ') === 'E Bm7 A Am' && s.sections.length >= 3,
-  ),
-);
-check(
-  'bruna: terceira parte gera os 2 padrões distintos',
-  seqs.some((s) => s.chords.join(' ') === 'E B/E A/E E E4') &&
-    seqs.some((s) => s.chords.join(' ') === 'E B A9 E B'),
+  seqs.some((s) => s.chords.join(' ') === 'E Bm7 A Am' && s.sections.length >= 3),
+  seqs.map((s) => `${s.chords.join(' ')} [${s.sections.join(',')}]`).join('\n'),
 );
 
 // --- metadados do nome do arquivo ---
@@ -206,10 +199,14 @@ check('manual: só acordes reais', junk.join(' ') === 'E C#m7 B11 A9', junk.join
 // --- round-trip de edição: songToChartText re-parseável ---
 const rt = parseChordOverLyrics(songToChartText(boSong));
 check('round-trip: mesmas seções', rt.sections.length === boSong.sections.length, `${rt.sections.length} vs ${boSong.sections.length}`);
+// Song.chords é lista de ÚNICOS na ordem de aparição (fix do falso positivo
+// do import em lote: ocorrências estouravam o teto do schema Zod). O parser
+// devolve ocorrências; comparar únicos com únicos.
+const rtUnique = [...new Set(rt.chords)];
 check(
   'round-trip: acordes preservados',
-  rt.chords.join(' ') === boSong.chords.join(' '),
-  `${rt.chords.length} vs ${boSong.chords.length}`,
+  rtUnique.join(' ') === boSong.chords.join(' '),
+  `${rtUnique.length} vs ${boSong.chords.length}`,
 );
 
 // --- auto detect ---

@@ -4,6 +4,9 @@ import { songViews } from '@/lib/db/schema';
 import { getUnifiedCatalog } from '@/lib/songs/server-catalog';
 
 /** Ranking público por contagem de song_views (SPEC_006 A7). */
+// Cache de 120s (SPEC_012 A3): alivia o Neon; rota não usa cookies/sessão.
+export const revalidate = 120;
+
 export async function GET(): Promise<Response> {
   try {
     const counts = await db

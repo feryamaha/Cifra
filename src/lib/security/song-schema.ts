@@ -63,6 +63,16 @@ export const songPayloadSchema = z
     published: z.boolean().optional(),
     videoUrl: z.string().url().max(500).optional(),
     difficulty: z.enum(['iniciante', 'intermediario', 'avancado']).optional(),
+    progressions: z
+      .array(
+        z
+          .object({
+            chords: z.array(z.string().max(40)).min(2).max(16),
+          })
+          .strict(),
+      )
+      .max(20)
+      .optional(),
   })
   .strict();
 
@@ -98,6 +108,7 @@ export function parseSongPayload(input: unknown): { ok: true; song: Song } | { o
     sections: d.sections,
     genres: d.genres,
     source: d.source,
+    progressions: d.progressions,
     sourceText: d.sourceText,
     published: d.published,
     videoUrl: d.videoUrl,

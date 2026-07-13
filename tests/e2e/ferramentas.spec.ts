@@ -3,15 +3,17 @@ import { expect, test } from './fixtures';
 /** F9: dicionário de acordes, metrônomo e afinador. */
 
 test.describe('Ferramentas', () => {
-  test('F9: dicionário busca C e mostra as 16 variações', async ({ page }) => {
+  test('F9: dicionário busca C e mostra as 24 variações', async ({ page }) => {
     await page.goto('/acordes');
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Dicionário');
 
     const input = page.getByPlaceholder(/Ex: C, Dm/);
     await input.fill('C');
-    await expect(page.getByText(/16 variações encontradas/)).toBeVisible();
-    await expect(page.getByText('Posição 1', { exact: true })).toBeVisible();
-    await expect(page.getByText('Posição 16', { exact: true })).toBeVisible();
+    // SPEC_012 B (rev. Fernando): sem chips; teto ampliado para 24 variações
+    await expect(page.getByText(/24 variações encontradas/)).toBeVisible();
+    // rótulo agora inclui o chip de categoria ("Posição 1 Aberta")
+    await expect(page.getByText(/^Posição 1(?!\d)/).first()).toBeVisible();
+    await expect(page.getByText(/^Posição 24/)).toBeVisible();
   });
 
   test('F9: dicionário reconhece notação BR complexa (Bm7(b5))', async ({ page }) => {
@@ -19,7 +21,7 @@ test.describe('Ferramentas', () => {
     const input = page.getByPlaceholder(/Ex: C, Dm/);
     await input.fill('Bm7(b5)');
     await expect(page.getByText(/variaç(ão|ões) encontrada/)).toBeVisible();
-    await expect(page.getByText('Posição 1', { exact: true })).toBeVisible();
+    await expect(page.getByText(/^Posição 1(?!\d)/).first()).toBeVisible();
   });
 
   test('F9: metrônomo renderiza controles', async ({ page }) => {
